@@ -1,0 +1,12 @@
+{"time":"2026-03-04T10:00:00Z","kind":"cmd","source":"terminal","text":"ls -la","exit":0}
+{"time":"2026-03-04T10:00:05Z","kind":"cmd","source":"terminal","text":"kubectx prod-eu","exit":0}
+{"time":"2026-03-04T10:00:10Z","kind":"cmd","source":"terminal","text":"kubectl get pods -n payments","exit":0}
+{"time":"2026-03-04T10:00:15Z","kind":"cmd","source":"terminal","text":"kubectl logs pod payments-api-7d9f8b6c5-x2x4k -n payments","exit":0}
+{"time":"2026-03-04T10:00:20Z","kind":"cmd","source":"terminal","text":"kubectl get pods -n payments","exit":0}
+{"time":"2026-03-04T10:00:25Z","kind":"cmd","source":"terminal","text":"kubectl rollout status deploy/payments-api -n payments","exit":1}
+{"time":"2026-03-04T10:00:30Z","kind":"note","source":"overlay","text":"Pods were crash-looping after the config change"}
+{"time":"2026-03-04T10:00:35Z","kind":"note","source":"overlay","text":"Confirm the on-call lead agreed to the restart","tags":["decision"]}
+{"time":"2026-03-04T10:00:40Z","kind":"cmd","source":"terminal","text":"kubectl set image deploy/payments-api api=registry.example.com/api:1.4.2 -n payments","exit":0}
+{"time":"2026-03-04T10:00:45Z","kind":"cmd","source":"terminal","text":"curl -H 'Authorization: Bearer ghp_abcdefghijklmnopqrstuvwxyz0123456789' https://api.example.com/health","exit":0}
+{"time":"2026-03-04T10:00:50Z","kind":"cmd","source":"terminal","text":"helm upgrade payments ./chart","exit":0}
+{"time":"2026-03-04T10:00:55Z","kind":"cmd","source":"terminal","text":"docker logs 0123456789ab","exit":0}

@@ -1,0 +1,8 @@
+id: 01HZZZZZZZZZZZZZZZZZZZZZZC
+handle: 2026.05-1
+name: payments-crashloop
+started: 2026-05-02T08:00:00Z
+stopped: 2026-05-02T08:30:00Z
+fixed: true
+links:
+  slack: C0123ABC

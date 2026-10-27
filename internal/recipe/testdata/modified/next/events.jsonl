@@ -1,0 +1,5 @@
+{"time":"2026-04-10T09:00:00Z","kind":"cmd","source":"terminal","text":"kubectl config use-context staging-eu","exit":0}
+{"time":"2026-04-10T09:00:05Z","kind":"note","source":"overlay","text":"Check the feature flag is off first","tags":["decision"]}
+{"time":"2026-04-10T09:00:10Z","kind":"note","source":"overlay","text":"Confirm the on-call lead agreed to the restart","tags":["decision"]}
+{"time":"2026-04-10T09:00:15Z","kind":"cmd","source":"terminal","text":"kubectl rollout restart deploy/payments-api -n payments","exit":0}
+{"time":"2026-04-10T09:00:20Z","kind":"cmd","source":"terminal","text":"kubectl get pods -n payments","exit":0}

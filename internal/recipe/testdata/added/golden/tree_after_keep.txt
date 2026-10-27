@@ -1,0 +1,5 @@
+recipes/payments-crashloop.md
+sessions/archive/2026.03-1-payments-crashloop/context.md
+sessions/archive/2026.03-1-payments-crashloop/delta.md
+sessions/archive/2026.03-1-payments-crashloop/recipe.md
+sessions/archive/2026.03-1-payments-crashloop/session.yaml
