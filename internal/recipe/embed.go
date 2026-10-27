@@ -30,13 +30,13 @@ func EmbeddingOptions(m config.Model, home string) DedupOptions {
 }
 
 // EmbedMatchThreshold is the cosine similarity at which a draft becomes a
-// proposed variant of an existing recipe (SPEC D-14). Recipes that fix the same
-// problem (same tool, same environment class) usually score 0.75-0.9 with
-// nomic-embed-text and 0.6-0.8 with OpenAI text-embedding-3-*; unrelated recipes
-// that share a tool land around 0.3-0.55. A wrong match only proposes a variant
-// that a person reviews, while a miss creates a near-duplicate, so the cut sits
-// just above the unrelated band and below the related one.
-const EmbedMatchThreshold = 0.65
+// proposed variant of an existing recipe (SPEC D-14). Calibrated with
+// nomic-embed-text on kubectl prod recipes (calibrate_test.go, 2026-10-28):
+// the same problem written by someone else scored 0.777-0.827, different
+// problems sharing the tool scored 0.583-0.769. Commands dominate the text, so
+// the bands sit close; title + situation alone or nomic task prefixes did not
+// separate them better. Other embedding models need their own calibration.
+const EmbedMatchThreshold = 0.77
 
 // maxEmbedChars keeps inputs inside small embedding context windows
 // (nomic-embed-text: 2048 tokens).

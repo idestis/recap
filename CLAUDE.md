@@ -68,7 +68,7 @@ Git tests set `GIT_CONFIG_GLOBAL` to an empty file so user signing config doesn'
 ## MVP task list (suggested order)
 
 1. Click-test the tray app (hotkey, overlay, dictation, stop → publish); signing + notarization with a Developer ID.
-2. Calibrate the embedding threshold on real recipes (`ollama pull nomic-embed-text`).
+2. Per-model embedding thresholds (0.77 is calibrated for nomic-embed-text only; rerun with `RECAP_CALIBRATE_MODEL=<model> go test -tags calibrate -run TestCalibrate -v ./internal/recipe/`).
 3. Tray "add context" for any active session from the space picker; tray reads the stop `maybe` count.
 4. `recapd` daemon + SQLite store behind the current `store` API (covered by `internal/store` tests).
 5. GoReleaser, signing, notarization, Homebrew formula.
