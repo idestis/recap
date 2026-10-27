@@ -1,0 +1,17 @@
+#!/bin/sh
+# Link the CLI and launch the app for the console user. Never fail the install
+# because of the launch step.
+APP="/Applications/Recap.app"
+LINK="/usr/local/bin/recap"
+
+mkdir -p /usr/local/bin || true
+ln -sf "$APP/Contents/Helpers/recap" "$LINK" || true
+
+CONSOLE_USER=$(stat -f%Su /dev/console 2>/dev/null || true)
+if [ -n "$CONSOLE_USER" ] && [ "$CONSOLE_USER" != "root" ] && [ "$CONSOLE_USER" != "_mbsetupuser" ]; then
+    CONSOLE_UID=$(id -u "$CONSOLE_USER" 2>/dev/null || true)
+    if [ -n "$CONSOLE_UID" ]; then
+        launchctl asuser "$CONSOLE_UID" sudo -u "$CONSOLE_USER" open -a "$APP" >/dev/null 2>&1 || true
+    fi
+fi
+exit 0

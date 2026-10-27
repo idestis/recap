@@ -1,0 +1,4 @@
+#!/bin/sh
+# Quit a running Recap so the bundle can be replaced. Never fail the install.
+pkill -x Recap >/dev/null 2>&1 || true
+exit 0

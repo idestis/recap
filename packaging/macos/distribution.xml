@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Recap</title>
+    <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="14.0"/>
+        </allowed-os-versions>
+    </volume-check>
+    <choices-outline>
+        <line choice="default"/>
+    </choices-outline>
+    <choice id="default" title="Recap">
+        <pkg-ref id="dev.recap.pkg"/>
+    </choice>
+    <pkg-ref id="dev.recap.pkg" version="@VERSION@" onConclusion="none">component.pkg</pkg-ref>
+</installer-gui-script>
