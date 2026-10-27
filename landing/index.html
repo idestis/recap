@@ -3,159 +3,513 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>recap: fix it once, never figure it out again</title>
-<meta name="description" content="recap records what you and your AI agents do while fixing an incident, then turns the approved parts into risk-labeled Markdown recipes in your own Git repo. Local-first CLI and macOS menu bar app.">
-<link rel="canonical" href="https://idestis.github.io/recap/">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0f1319" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#fde7da" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1219" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="recap: fix it once, never figure it out again">
-<meta property="og:description" content="Local-first incident recipes from your terminal and AI agents, kept in your own Git repo.">
-<meta property="og:url" content="https://idestis.github.io/recap/">
+<meta property="og:site_name" content="recap">
 <meta property="og:image" content="https://idestis.github.io/recap/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="recap: fix it once, never figure it out again">
-<meta name="twitter:description" content="Local-first incident recipes from your terminal and AI agents, kept in your own Git repo.">
 <meta name="twitter:image" content="https://idestis.github.io/recap/og.png">
-<script>try{var t=localStorage.getItem("recap-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
-<link rel="stylesheet" href="styles.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"recap","description":"Local-first CLI and macOS menu bar app that turns incident work into reviewed, risk-labeled Markdown recipes in Git.","operatingSystem":"macOS","applicationCategory":"DeveloperApplication","license":"https://www.apache.org/licenses/LICENSE-2.0","url":"https://idestis.github.io/recap/","codeRepository":"https://github.com/idestis/recap"}</script>
+<script>(function(){var t;try{t=localStorage.getItem("recap-theme")}catch(e){}if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t})()</script>
+<title>recap: fix it once, never figure it out again</title>
+<meta name="description" content="recap records the work you do by hand, then turns it into recipes you can run again with new values, or hand to Claude Code as a skill. Local-first CLI and macOS menu bar app.">
+<link rel="canonical" href="https://idestis.github.io/recap/">
+<meta property="og:title" content="recap: fix it once, never figure it out again">
+<meta property="og:description" content="Record the work you do by hand. Run it again with new values, or hand it to Claude Code as a skill.">
+<meta property="og:url" content="https://idestis.github.io/recap/">
+<meta name="twitter:title" content="recap: fix it once, never figure it out again">
+<meta name="twitter:description" content="Record the work you do by hand. Run it again with new values, or hand it to Claude Code as a skill.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"recap","description":"Local-first CLI and macOS menu bar app that records manual work and turns it into reviewed recipes you can run again or hand to Claude Code as a skill.","operatingSystem":"macOS","applicationCategory":"DeveloperApplication","license":"https://www.apache.org/licenses/LICENSE-2.0","url":"https://idestis.github.io/recap/","codeRepository":"https://github.com/idestis/recap"}</script>
+<script type="module" src="/src/main.js"></script>
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
-<header>
-<div class="wrap bar">
-<a class="brand" href="#top"><img src="logo.svg" alt="" width="28" height="28">recap</a>
-<nav aria-label="Primary">
-<a class="n" href="#how">How it works</a><a class="n" href="#features">Features</a><a class="n" href="#privacy">Privacy</a><a href="https://github.com/idestis/recap">GitHub</a>
-<button class="tt" id="tt" type="button" aria-label="Toggle light and dark theme">&#9680;</button>
-</nav>
-</div>
+<svg width="0" height="0" class="absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-loop" viewBox="0 0 96 96"><path d="M48 20A28 28 0 1 1 20 48" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><polyline points="13 51 20 42 27 51" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="48" cy="48" r="11" fill="currentColor"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></symbol>
+</svg>
+<div class="page">
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:font-bold focus:text-navy">Skip to content</a>
+<header class="sticky top-0 z-40 border-b border-navy/5 bg-white/85 backdrop-blur-md dark:border-white/10 dark:bg-night-2/85">
+  <div class="gutter flex h-16 items-center justify-between gap-3">
+    <a href="./" class="flex min-h-11 items-center gap-2.5 text-xl font-extrabold tracking-tight no-underline" aria-label="recap home">
+      <img src="/logo.svg" alt="" width="32" height="32" class="size-8">recap
+    </a>
+    <nav aria-label="Main" data-nav class="absolute inset-x-0 top-full flex flex-col gap-1 border-b border-navy/10 bg-white p-3 text-sm font-semibold max-md:hidden md:static md:flex-row md:items-center md:gap-1 md:border-0 md:bg-transparent md:p-0 dark:border-white/10 dark:bg-night-2 md:dark:bg-transparent">
+      <a class="flex min-h-11 items-center rounded-lg px-3 no-underline hover:bg-navy/5 dark:hover:bg-white/10" href="./#capture">How it works</a>
+      <a class="flex min-h-11 items-center rounded-lg px-3 no-underline hover:bg-navy/5 dark:hover:bg-white/10" href="docs/">Docs</a>
+      <a class="flex min-h-11 items-center rounded-lg px-3 no-underline hover:bg-navy/5 dark:hover:bg-white/10" href="./#privacy">Privacy</a>
+      <a class="flex min-h-11 items-center rounded-lg px-3 no-underline hover:bg-navy/5 dark:hover:bg-white/10" href="https://github.com/idestis/recap">GitHub</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <button type="button" data-theme-toggle aria-label="Toggle light and dark theme" class="grid size-11 place-items-center rounded-xl hover:bg-navy/5 dark:hover:bg-white/10">
+        <svg class="size-5 dark:hidden" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="hidden size-5 dark:block" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
+      <a class="btn btn-primary hidden lg:inline-flex" href="https://github.com/idestis/recap">View on GitHub</a>
+      <button type="button" data-nav-toggle aria-expanded="false" aria-label="Menu" class="grid size-11 place-items-center rounded-xl hover:bg-navy/5 md:hidden dark:hover:bg-white/10">
+        <svg class="size-6" aria-hidden="true"><use href="#i-menu"/></svg>
+      </button>
+    </div>
+  </div>
 </header>
 <main id="main">
-<div class="hero" id="top"><div class="wrap">
-<h1>Fix it once. <em>Never figure it out again.</em></h1>
-<p class="lede">recap watches what you and your AI agents do while fixing an incident, then turns the parts you approve into clean recipes in your own Git repo.</p>
-<div class="cta">
-<a class="btn p" href="https://github.com/idestis/recap">View on GitHub</a>
-<a class="btn" href="https://github.com/idestis/recap/releases">Download for Mac<small>coming soon</small></a>
-</div>
-<p class="fine">macOS 14 or later &middot; open source &middot; early development</p>
-<div class="stage">
-<div class="term" role="img" aria-label="Terminal session: recap start, two kubectl commands, a context note, then recap stop drafting a recipe called Fix OOMKilled pods, risky-prod, 4 steps.">
-<div class="tb" aria-hidden="true"><i></i><i></i><i></i><span>zsh &mdash; prod-eu</span></div>
-<pre aria-hidden="true"><span class="ln"><span class="g">$</span> recap start "checkout API returning 502s"
-<span class="rec">&#9679;</span> <span class="d">Recording</span> 2026-10-27.1 <span class="d">checkout-api-returning-502s</span></span><span class="ln"><span class="g">$</span> kubectl -n checkout get pods
-<span class="d">checkout-api-7d9   0/1   OOMKilled</span></span><span class="ln"><span class="g">$</span> kubectl -n checkout set resources deploy/checkout-api \
-    --limits=memory=1Gi</span><span class="ln"><span class="g">$</span> recap ctx "do not roll back, migration 0142 ran"
-<span class="d">note added</span></span><span class="ln"><span class="g">$</span> recap stop
-<span class="d">Did this fix it? [Y/n]</span> y</span><span class="ln"><span class="g">&#10003;</span> Draft: "Fix OOMKilled pods" &middot; <span class="y">risky-prod</span> &middot; 4 steps</span><span class="ln"><span class="g">$</span> <span class="cur"></span></span></pre>
-</div>
-<article class="recipe" aria-label="Example recipe">
-<div class="file">recipes/fix-oomkilled-pods.md</div>
-<h3>Fix OOMKilled pods</h3>
-<span class="badge">risky &middot; prod</span>
-<h4>Preconditions</h4>
-<ul><li>kubectl context points at the right cluster</li><li>Deployment is not mid-rollout</li></ul>
-<h4>Steps</h4>
-<ol>
-<li>List pods and confirm the OOMKilled status<pre>kubectl -n {namespace} get pods</pre></li>
-<li>Raise the memory limit<pre>kubectl -n {namespace} set resources deploy/{deployment} --limits=memory=1Gi</pre></li>
-<li>Watch the rollout<pre>kubectl -n {namespace} rollout status deploy/{deployment}</pre></li>
-<li>Confirm pods are Ready<pre>kubectl -n {namespace} get pods</pre></li>
-</ol>
-<p class="undo">Undo: kubectl -n {namespace} rollout undo deploy/{deployment}</p>
-</article>
-</div>
-</div></div>
 
-<section id="how" class="alt"><div class="wrap">
-<h2>How it works</h2>
-<p class="sub">Five steps from raw terminal noise to a recipe your team can trust.</p>
-<ol class="pipe">
-<li><b>Capture</b><span>Commands from attached tabs, Claude Code tool calls, notes, links and files.</span></li>
-<li><b>Redact</b><span>Secrets are masked on your Mac before any model call or Git write.</span></li>
-<li><b>Label risk</b><span>Rules mark each step safe, risky or destructive, and flag prod.</span></li>
-<li><b>Draft</b><span>Templates, or your own model. Models reword; commands never change.</span></li>
-<li><b>Review &amp; publish</b><span>Pick what to keep, dedup into variants, then open a PR or push.</span></li>
-</ol>
-</div></section>
+<!-- HERO -->
+<section class="gutter pb-16 pt-10 text-center sm:pt-16" aria-labelledby="hero-h">
+  <div class="mx-auto inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-peach-soft p-1.5 dark:bg-night-3">
+    <span class="px-2 text-xs font-semibold sub">Works with</span>
+    <span class="chip shadow-none">Claude Code</span>
+    <span class="chip shadow-none">Ollama</span>
+    <span class="chip shadow-none">Wispr Flow</span>
+    <span class="chip shadow-none">GitHub</span>
+  </div>
+  <h1 id="hero-h" class="mx-auto mt-6 max-w-3xl text-balance text-[2.5rem] font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
+    Fix it once. Never figure it out <span class="grad-text">again</span>.
+  </h1>
+  <p class="mx-auto mt-5 max-w-2xl text-pretty text-base leading-7 sub sm:text-lg">
+    Record the work you do by hand: commands, decisions, notes, links. recap turns it into recipes you can run again with new values, or hand to Claude Code as a skill.
+  </p>
+  <div class="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+    <a class="btn btn-primary min-h-12 px-7" href="docs/">Get started</a>
+    <a class="btn btn-ghost min-h-12 px-7" href="https://github.com/idestis/recap">View on GitHub</a>
+  </div>
+  <p class="mt-4 text-xs sub">macOS 14+ · open source · early development</p>
 
-<section id="features"><div class="wrap">
-<h2>Built for the next 3 a.m.</h2>
-<p class="sub">Small, local, and honest about risk.</p>
-<div class="grid">
-<div class="card"><h3>Recipes in your Git repo</h3><p>Plain, deterministic Markdown with preconditions, numbered steps and an undo line. Reviewable diffs, no lock-in.</p></div>
-<div class="card"><h3>Spaces for every team</h3><p>One install, many recipe repos, picked by the folder you work in. Each publishes by pull request, push, or not at all.</p></div>
-<div class="card"><h3>Bring your own model</h3><p>Use templates, Ollama locally, or any OpenAI-compatible API. API keys stay in the macOS Keychain.</p></div>
-<div class="card"><h3>Quick context overlay</h3><p>Press <kbd>&#8997;&#8679;Space</kbd> anywhere for a glass input bar. Type or dictate with macOS Dictation or Wispr Flow, and attach a screenshot or tab link.</p></div>
-<div class="card"><h3>Risk you can trust</h3><p>Risk comes from rules. A model may raise it, never lower it. Risky steps ask before they run.</p></div>
-<div class="card"><h3>Works with Claude Code</h3><p>Hooks record its commands and can block destructive prod commands when a verified recipe exists.</p></div>
-</div>
-</div></section>
+  <!-- Product scene -->
+  <div class="relative mx-auto mt-12 max-w-[1040px] rounded-[1.5rem] bg-gradient-to-br from-[#ffd9c2] via-[#ffcab4] to-[#f7bccd] p-3 text-left sm:rounded-[2rem] sm:p-5 md:h-[620px] md:p-0 dark:from-[#1f2a3d] dark:via-[#2a2440] dark:to-[#3b2531]" role="img" aria-label="The recap menu bar menu, a terminal session and the Add Context overlay on a Mac desktop">
+    <!-- menu bar -->
+    <div class="flex h-8 items-center justify-between rounded-lg bg-white/60 px-3 text-xs font-semibold text-navy backdrop-blur md:rounded-b-none md:rounded-t-[2rem] md:px-6 dark:bg-black/30 dark:text-snow">
+      <span class="flex gap-4"><span class="font-extrabold">Terminal</span><span class="max-md:hidden">Shell</span><span class="max-md:hidden">Edit</span><span class="max-md:hidden">View</span><span class="max-md:hidden">Window</span></span>
+      <span class="flex items-center gap-3">
+        <span class="relative inline-flex"><svg class="size-4" aria-hidden="true"><use href="#i-loop"/></svg><span class="rec-dot absolute -right-1 -top-1 size-1.5"></span></span>
+        <span>Tue 13:14</span>
+      </span>
+    </div>
+    <!-- tray menu (md+) -->
+    <div class="glass absolute right-6 top-[34px] z-20 hidden w-[300px] rounded-xl p-1.5 text-[13px] md:block" aria-hidden="true">
+      <div class="px-2.5 py-1.5"><span class="rec-dot mr-1.5"></span><span class="font-bold">Recording · 2026-10-27.1 · 03:12</span></div>
+      <div class="px-2.5 pb-0.5 text-slate-ink dark:text-mist">checkout API returning 502s</div>
+      <div class="px-2.5 pb-1.5 text-slate-ink dark:text-mist">Terminal 6 · Claude 0 · Notes 2</div>
+      <hr class="my-1 border-navy/10 dark:border-white/15">
+      <div class="flex justify-between rounded-md bg-coral/15 px-2.5 py-1.5"><span>Add Context…</span><span class="sub">⌥⇧Space</span></div>
+      <div class="px-2.5 py-1.5">Stop and Review…</div>
+      <hr class="my-1 border-navy/10 dark:border-white/15">
+      <div class="flex justify-between px-2.5 py-1.5"><span>Space: team</span><span class="sub">▸</span></div>
+      <div class="flex justify-between px-2.5 py-1.5"><span>Settings…</span><span class="sub">⌘,</span></div>
+      <div class="flex justify-between px-2.5 py-1.5"><span>Quit Recap</span><span class="sub">⌘Q</span></div>
+    </div>
 
-<section class="alt"><div class="wrap run">
-<div>
-<h2>Run it next time</h2>
-<p class="sub">Run the recipe by name. recap asks for the variables, shows a preflight with every step labeled, and only then goes ahead.</p>
-</div>
-<div class="term" role="img" aria-label="Terminal: recap run pods out of memory asks for namespace and deployment, then lists a preflight with safe and risky steps.">
-<div class="tb" aria-hidden="true"><i></i><i></i><i></i><span>zsh</span></div>
-<pre aria-hidden="true"><span class="g">$</span> recap run "pods out of memory"
-<span class="d">Recipe:</span> Fix OOMKilled pods
-namespace? <span class="c">checkout</span>
-deployment? <span class="c">checkout-api</span>
+    <!-- terminal -->
+    <div class="term mt-3 md:absolute md:left-8 md:top-14 md:z-10 md:mt-0 md:w-[60%]" data-typing>
+      <div class="term-bar"><i></i><i></i><i></i><span class="ml-2">zsh · runbooks</span></div>
+<pre class="term-body" aria-label="Terminal session"><span data-step><span class="t-p">$</span> <span class="cmd">recap start checkout API returning 502s</span></span>
+<span data-step><span class="t-rec">●</span> <span class="t-b">Recording</span>  2026-10-27.1  checkout-api-returning-502s
+  <span class="t-dim">space runbooks</span></span>
+<span data-step><span class="t-p">$</span> <span class="cmd">kubectx prod-eu</span></span>
+<span data-step><span class="t-p">$</span> <span class="cmd">kubectl set resources deploy/checkout-api -n checkout --limits=memory=1Gi</span></span>
+<span data-step><span class="t-p">$</span> <span class="cmd">recap ctx "rollback ruled out, migration 0142 already ran"</span></span>
+<span data-step><span class="t-ok">✓</span> Note added · decision</span>
+<span data-step><span class="t-p">$</span> <span class="cmd">recap stop --fixed</span></span>
+<span data-step>  Related    5 commands · 1 notes · 1 links/files
+  <span class="t-dim">Excluded   1 failed commands</span></span>
+<span data-step><span class="t-ok">✓</span> Draft: "Fix Checkout API 502s" · risky-prod · 6 steps</span></pre>
+    </div>
 
-<span class="d">Preflight</span>
- 1 <span class="g">safe  </span> kubectl -n checkout get pods
- 2 <span class="y">risky </span> kubectl -n checkout set resources ...
- 3 <span class="g">safe  </span> kubectl -n checkout rollout status ...
- 4 <span class="g">safe  </span> kubectl -n checkout get pods
-<span class="y">prod</span> cluster. Run 4 steps? [y/N]</pre>
-</div>
-</div></section>
+    <!-- overlay -->
+    <div class="mt-4 md:absolute md:bottom-8 md:left-1/2 md:z-20 md:mt-0 md:w-[600px] md:-translate-x-1/2">
+      <div class="mb-2 flex justify-end">
+        <span class="glass inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"><span class="rec-dot shrink-0"></span><span class="truncate">2026-10-27.1<span class="max-sm:hidden"> · checkout-api-returning-502s</span> · 03:12</span></span>
+      </div>
+      <div class="glass flex items-center gap-2 rounded-2xl p-2">
+        <span class="grid size-9 shrink-0 place-items-center rounded-full bg-navy/10 dark:bg-white/10"><svg class="size-4" aria-hidden="true"><use href="#i-plus"/></svg></span>
+        <span class="min-w-0 flex-1 truncate text-sm sub">Add context: a note, a link, anything</span>
+        <svg class="size-5 shrink-0 sub" aria-hidden="true"><use href="#i-mic"/></svg>
+        <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-sunrise text-navy"><svg class="size-4" aria-hidden="true"><use href="#i-send"/></svg></span>
+      </div>
+      <div class="mt-2 flex flex-wrap justify-center gap-1.5 text-[11px] font-semibold">
+        <span class="glass rounded-full px-2.5 py-1">Screenshot of Arc <span class="sub">⌘⇧S</span></span>
+        <span class="glass rounded-full px-2.5 py-1">Area <span class="sub">⌘⇧A</span></span>
+        <span class="glass rounded-full px-2.5 py-1">Arc tab link <span class="sub">⌘⇧L</span></span>
+      </div>
+    </div>
 
-<section id="privacy"><div class="wrap">
-<h2>What recap does and doesn't do</h2>
-<p class="sub">No recap cloud. Raw timelines stay on your Mac; only reviewed recipes go to Git.</p>
-<div class="cols">
-<div class="card do"><h3>Does</h3><ul>
-<li>Mask secrets locally before any model call or Git write</li>
-<li>Keep raw timelines on your Mac</li>
-<li>Store API keys in the macOS Keychain</li>
-<li>Ask before risky steps</li>
-<li>Publish only recipes you reviewed</li>
-</ul></div>
-<div class="card dont"><h3>Doesn't</h3><ul>
-<li>Send telemetry or run a hosted service</li>
-<li>Record audio, ever</li>
-<li>Delete anything on its own</li>
-<li>Let a model change a command or lower a risk label</li>
-<li>Put timelines, screenshots or transcripts in Git</li>
-</ul></div>
-</div>
-</div></section>
+    <!-- floating chips (md+) -->
+    <span class="chip float absolute left-[16px] top-[400px] z-30 hidden md:inline-flex"><svg class="size-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true"><use href="#i-check"/></svg>Secret masked</span>
+    <span class="chip float float-2 absolute left-[54%] top-[290px] z-30 hidden md:inline-flex"><span class="text-red-700 dark:text-red-300">risky · prod</span></span>
+    <span class="chip float float-3 absolute right-[-12px] top-[340px] z-30 hidden md:inline-flex"><svg class="size-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true"><use href="#i-check"/></svg>Pull request #42</span>
+    <span class="chip float float-2 absolute right-10 top-[400px] z-30 hidden md:inline-flex"><svg class="size-3.5 text-coral-deep dark:text-amber" aria-hidden="true"><use href="#i-loop"/></svg>Claude Code skill</span>
+  </div>
+</section>
 
-<section id="start" class="alt start"><div class="wrap">
-<h2>Get started</h2>
-<p class="sub">Early development, build from source. A signed Mac download is not published yet.</p>
-<div class="cols">
-<div class="term"><div class="tb" aria-hidden="true"><i></i><i></i><i></i><span>install</span></div><pre>git clone https://github.com/idestis/recap
-cd recap &amp;&amp; task pkg</pre></div>
-<div class="term"><div class="tb" aria-hidden="true"><i></i><i></i><i></i><span>first commands</span></div><pre>recap init
-recap shell-init --install
-recap start "&hellip;"</pre></div>
-</div>
-</div></section>
+<!-- TOOL STRIP -->
+<section class="gutter pb-16" aria-label="Works with the tools you already use">
+  <p class="text-center text-[11px] font-bold uppercase tracking-[0.2em] sub">Whatever you type in a terminal</p>
+  <ul class="mx-auto mt-4 flex max-w-3xl flex-wrap justify-center gap-x-7 gap-y-2 font-mono text-sm font-semibold text-slate-ink/80 dark:text-mist">
+    <li>kubectl</li><li>terraform</li><li>helm</li><li>docker</li><li>aws</li><li>gcloud</li><li>psql</li><li>Claude Code</li>
+  </ul>
+</section>
+
+<!-- CAPTURE -->
+<section id="capture" class="gutter scroll-mt-20 py-12 sm:py-20" aria-labelledby="capture-h">
+  <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <div>
+      <p class="eyebrow">Capture</p>
+      <h2 id="capture-h" class="h2">Start from the terminal <span class="grad-text">or</span> from anywhere</h2>
+      <p class="mt-4 leading-7 sub">We do plenty of things by hand: reset a local database, onboard a service, rotate a cert, cut a release, chase an incident. While you do it, recap keeps the commands, your decisions and the links you opened. Incidents are one example, not the whole point.</p>
+      <ul class="mt-5 space-y-3 leading-7">
+        <li><strong>Terminal.</strong> <code class="font-mono text-sm">recap start</code> is instant and offline. Open another tab and run <code class="font-mono text-sm">recap join</code>.</li>
+        <li><strong>Anywhere.</strong> Press <kbd class="rounded border border-navy/20 px-1.5 font-mono text-xs dark:border-white/25">⌥⇧Space</kbd> in any app to start a session or add context.</li>
+        <li><strong>Type or dictate.</strong> Use macOS Dictation or Wispr Flow in the overlay. recap never records audio.</li>
+      </ul>
+    </div>
+    <div class="min-w-0 space-y-5">
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ml-2">zsh</span></div>
+<pre class="term-body"><span class="t-p">$</span> recap start checkout API returning 502s
+<span class="t-rec">●</span> <span class="t-b">Recording</span>  2026-10-27.1  checkout-api-returning-502s
+  <span class="t-dim">space runbooks
+  New tab? run: recap join   ·   add context: recap ctx "…"</span></pre>
+      </div>
+      <div class="rounded-2xl bg-gradient-to-br from-[#ffd9c2] to-[#f7bccd] p-4 sm:p-6 dark:from-[#1f2a3d] dark:to-[#3b2531]" role="img" aria-label="The overlay before a session starts: What's wrong? This starts a session">
+        <div class="mb-2 flex justify-end"><span class="glass rounded-full px-3 py-1 text-xs font-semibold">New session in team ▾</span></div>
+        <div class="glass flex items-center gap-2 rounded-2xl p-2">
+          <span class="grid size-9 shrink-0 place-items-center rounded-full bg-navy/10 dark:bg-white/10"><svg class="size-4" aria-hidden="true"><use href="#i-plus"/></svg></span>
+          <span class="min-w-0 flex-1 truncate text-sm sub">What's wrong? This starts a session</span>
+          <svg class="size-5 shrink-0 sub" aria-hidden="true"><use href="#i-mic"/></svg>
+          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-sunrise text-navy"><svg class="size-4" aria-hidden="true"><use href="#i-send"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEW -->
+<section class="gutter py-12 sm:py-20" aria-labelledby="review-h">
+  <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <div class="min-w-0 space-y-5 lg:order-1">
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ml-2">recap stop</span></div>
+<pre class="term-body"><span class="t-b">Keep for the recipe</span>
+  <span class="t-ok">[x]</span> safe     kubectl get pods -n checkout
+  <span class="t-ok">[x]</span> safe     kubectl describe pod checkout-api-7d9f8-x2k4p -n checkout
+  <span class="t-dim">[ ] failed   kubectl logs … --previus</span>
+  <span class="t-ok">[x]</span> <span class="t-err">risky · prod</span>  kubectl set resources deploy/checkout-api …
+
+<span class="t-p">?</span> Did this fix it?  <span class="t-b">Yes</span> / No
+<span class="t-p">?</span> Open a pull request to team?</pre>
+      </div>
+      <div class="term">
+<pre class="term-body"><span class="t-p">$</span> recap stop --fixed
+  Related    5 commands · 1 notes · 1 links/files
+  <span class="t-dim">Excluded   1 failed commands</span>
+<span class="t-ok">✓</span> Draft: "Fix Checkout API 502s" · risky-prod · 6 steps
+<span class="t-ok">✓</span> Wrote sessions/2026-10-27.1-checkout-api-returning-502s/ in runbooks
+  Review delta.md, then: recap apply 2026-10-27.1</pre>
+      </div>
+    </div>
+    <div>
+      <p class="eyebrow">Review</p>
+      <h2 id="review-h" class="h2">Stop, keep what <span class="grad-text">mattered</span></h2>
+      <p class="mt-4 leading-7 sub">When you are done, recap shows everything it captured as a checklist. Failed commands start unticked. You tick what belongs, say whether it fixed the problem, and choose whether to open a pull request.</p>
+      <ul class="mt-5 space-y-2 leading-7 sub">
+        <li>One fixed question: did this fix it?</li>
+        <li>Related, maybe and excluded commands are separated for you.</li>
+        <li>Scripts and agents get the same flow with <code class="font-mono text-sm">--fixed</code> and <code class="font-mono text-sm">--json</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- RECIPES -->
+<section class="gutter py-12 sm:py-20" aria-labelledby="recipes-h">
+  <div class="mx-auto max-w-2xl text-center">
+    <p class="eyebrow">Recipes</p>
+    <h2 id="recipes-h" class="h2">A recipe your team can <span class="grad-text">trust</span></h2>
+    <p class="mt-4 leading-7 sub">The draft is plain Markdown in your own Git repo. Values become variables, risk is labeled, undo steps sit next to the step they reverse, and every recipe carries how often it ran and where it was last verified.</p>
+  </div>
+  <div class="mt-10 grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+    <!-- recipe.md rendered -->
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-navy/15 bg-white text-navy shadow-soft dark:border-white/15 dark:bg-[#0f151e] dark:text-snow" aria-label="Rendered recipe.md">
+      <div class="flex items-center gap-2 border-b border-navy/10 bg-navy/[0.03] px-4 py-2.5 font-mono text-xs dark:border-white/10 dark:bg-white/5">recipes/fix-checkout-api-502s.md</div>
+      <div class="space-y-4 p-4 text-sm leading-6 sm:p-6">
+        <h3 class="border-b border-navy/10 pb-2 text-2xl font-bold dark:border-white/10">Fix Checkout API 502s</h3>
+        <div class="overflow-x-auto"><table class="w-full min-w-[22rem] border-collapse text-xs sm:text-[13px]">
+          <tbody class="font-mono">
+            <tr class="border-b border-navy/10 dark:border-white/10"><th scope="row" class="w-24 py-1.5 pr-3 text-left font-semibold">id</th><td>fix-checkout-api-502s</td></tr>
+            <tr class="border-b border-navy/10 dark:border-white/10"><th scope="row" class="py-1.5 pr-3 text-left font-semibold">risk</th><td>risky-prod</td></tr>
+            <tr class="border-b border-navy/10 dark:border-white/10"><th scope="row" class="py-1.5 pr-3 text-left font-semibold">tools</th><td>[kubectl]</td></tr>
+            <tr class="border-b border-navy/10 dark:border-white/10"><th scope="row" class="py-1.5 pr-3 text-left font-semibold">trust</th><td>{ runs: 1, ok: 1 }</td></tr>
+            <tr class="border-b border-navy/10 dark:border-white/10"><th scope="row" class="py-1.5 pr-3 text-left font-semibold">verified</th><td>[prod-eu 2026-10-27]</td></tr>
+            <tr><th scope="row" class="py-1.5 pr-3 text-left font-semibold">vars</th><td>[context, deployment, namespace, pod]</td></tr>
+          </tbody></table></div>
+        <h4 class="border-b border-navy/10 pb-1 text-lg font-bold dark:border-white/10">Situation</h4>
+        <p>Checkout API returning 502s. Rollback not an option as migration 0142 has already run.</p>
+        <h4 class="border-b border-navy/10 pb-1 text-lg font-bold dark:border-white/10">Preconditions</h4>
+        <ul class="list-disc pl-5"><li>rollback ruled out, migration 0142 already ran</li></ul>
+        <h4 class="border-b border-navy/10 pb-1 text-lg font-bold dark:border-white/10">Steps</h4>
+        <ol class="list-decimal space-y-3 pl-5">
+          <li>Switch kube context <span class="badge badge-safe">safe</span>
+            <pre class="mt-1.5 overflow-x-auto rounded-lg bg-[#f4f6f8] p-3 font-mono text-xs dark:bg-[#161d29]">kubectx {context}</pre></li>
+          <li>List pods in namespace <span class="badge badge-safe">safe</span>
+            <pre class="mt-1.5 overflow-x-auto rounded-lg bg-[#f4f6f8] p-3 font-mono text-xs dark:bg-[#161d29]">kubectl get pods -n {namespace}</pre></li>
+          <li>Describe pod <span class="badge badge-safe">safe</span>
+            <pre class="mt-1.5 overflow-x-auto rounded-lg bg-[#f4f6f8] p-3 font-mono text-xs dark:bg-[#161d29]">kubectl describe pod {pod} -n {namespace}</pre></li>
+          <li>Adjust deployment resource limits <span class="badge badge-risky">risky · prod</span>
+            <pre class="mt-1.5 overflow-x-auto rounded-lg bg-[#f4f6f8] p-3 font-mono text-xs dark:bg-[#161d29]">kubectl set resources deploy/{deployment} -n {namespace} --limits=memory=1Gi</pre>
+            <p class="mt-1.5 text-xs">Undo: <code class="font-mono">kubectl rollout undo deploy/{deployment} -n {namespace}</code></p></li>
+        </ol>
+        <p class="text-xs sub">Two more safe steps trimmed here: resource usage and rollout status.</p>
+      </div>
+    </article>
+    <div class="min-w-0 space-y-5">
+      <!-- PR card -->
+      <div class="card" role="group" aria-label="Pull request">
+        <div class="flex items-start gap-3">
+          <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-emerald-600 text-white"><svg class="size-4" aria-hidden="true"><use href="#i-check"/></svg></span>
+          <div class="min-w-0">
+            <p class="font-bold leading-snug">recap: added fix-checkout-api-502s</p>
+            <p class="mt-1 text-xs sub">acme/runbooks · #42 · open</p>
+          </div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-1.5 text-xs font-semibold">
+          <span class="rounded-full bg-amber/30 px-2.5 py-0.5">recipe</span>
+          <span class="rounded-full bg-red-100 px-2.5 py-0.5 text-red-900 dark:bg-red-400/15 dark:text-red-300">risky-prod</span>
+        </div>
+        <p class="mt-3 flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400"><svg class="size-4" aria-hidden="true"><use href="#i-check"/></svg>All checks have passed</p>
+      </div>
+      <ul class="card space-y-3 text-sm leading-6">
+        <li><strong>Secrets are masked locally</strong> before a model sees anything or Git gets a write.</li>
+        <li><strong>Models only reword.</strong> A model never changes a command.</li>
+        <li><strong>Risk only goes up.</strong> Rules set the label; a model may raise it, never lower it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- RUN -->
+<section class="gutter py-12 sm:py-20" aria-labelledby="run-h">
+  <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <div>
+      <p class="eyebrow">Run</p>
+      <h2 id="run-h" class="h2">Next time, <span class="grad-text">one command</span></h2>
+      <p class="mt-4 leading-7 sub">Search by symptom. recap shows the preflight, asks once for each value, and fills it into every step. Safe steps run straight through. Risky ones stop and ask first.</p>
+      <ul class="mt-5 space-y-2 leading-7 sub">
+        <li>Preview is the default; <code class="font-mono text-sm">--execute</code> runs the steps.</li>
+        <li>Pass values with <code class="font-mono text-sm">--var name=value</code> for scripts.</li>
+        <li>Find recipes by meaning with <code class="font-mono text-sm">recap find</code>.</li>
+      </ul>
+    </div>
+    <div class="min-w-0 space-y-5">
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ml-2">recap run</span></div>
+<pre class="term-body"><span class="t-p">$</span> recap run "pods out of memory"
+<span class="t-b">context</span>
+<span class="t-dim">step 1: kubectx {context}</span>
+<span class="t-p">›</span> prod-us
+<span class="t-b">namespace</span>
+<span class="t-dim">step 2: kubectl get pods -n {namespace}</span>
+<span class="t-p">›</span> payments
+<span class="t-b">pod</span>
+<span class="t-dim">step 3: kubectl describe pod {pod} -n {namespace}</span>
+<span class="t-p">›</span> payments-api-1
+<span class="t-b">deployment</span>
+<span class="t-dim">step 5: kubectl set resources deploy/{deployment} …</span>
+<span class="t-p">›</span> payments-api</pre>
+      </div>
+      <div class="term">
+<pre class="term-body"><span class="t-b">Preflight</span>  fix-checkout-api-502s
+  1  Switch kube context           <span class="t-ok">safe</span>
+     <span class="t-dim">kubectx prod-us</span>
+  2  List pods in namespace           <span class="t-ok">safe</span>
+     <span class="t-dim">kubectl get pods -n payments</span>
+  3  Describe pod                     <span class="t-ok">safe</span>
+     <span class="t-dim">kubectl describe pod payments-api-1 -n payments</span>
+  4  Get pod resource usage           <span class="t-ok">safe</span>
+     <span class="t-dim">kubectl top pod -n payments</span>
+  5  Adjust deployment resource limits <span class="t-err">risky · prod</span>
+     <span class="t-dim">kubectl set resources deploy/payments-api -n payments --limits=memory=1Gi
+     undo kubectl rollout undo deploy/payments-api -n payments</span>
+  6  Check deployment rollout status  <span class="t-ok">safe</span>
+     <span class="t-dim">kubectl rollout status deploy/payments-api -n payments</span>
+
+  Preflight only. Add --execute to run (prototype safety default).</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTS -->
+<section class="gutter py-12 sm:py-20" aria-labelledby="agents-h">
+  <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <div class="min-w-0 space-y-5 lg:order-1">
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ml-2">recap skill</span></div>
+<pre class="term-body"><span class="t-p">$</span> recap skill fix-checkout-api-502s
+<span class="t-ok">✓</span> Wrote .claude/skills/fix-checkout-api-502s/SKILL.md
+  <span class="t-dim">Claude Code can now use it; it runs steps through recap run, so risk gates still apply.</span></pre>
+      </div>
+      <div class="overflow-hidden rounded-2xl border border-navy/15 bg-white shadow-soft dark:border-white/15 dark:bg-[#0f151e]">
+        <div class="border-b border-navy/10 bg-navy/[0.03] px-4 py-2.5 font-mono text-xs dark:border-white/10 dark:bg-white/5">.claude/skills/fix-checkout-api-502s/SKILL.md</div>
+<pre class="overflow-x-auto p-4 font-mono text-[12px] leading-6 text-navy dark:text-snow">---
+name: fix-checkout-api-502s
+description: Fix Checkout API 502s. Checkout API returning 502s.
+  Use when the user hits this situation or asks to fix checkout
+  api 502s. Risk: risky-prod.
+---
+
+## How to run
+
+1. Preview, which changes nothing:
+   `recap run fix-checkout-api-502s --var context=…
+   --var deployment=… --var namespace=… --var pod=…`</pre>
+      </div>
+    </div>
+    <div>
+      <p class="eyebrow">Agents</p>
+      <h2 id="agents-h" class="h2">Teach Claude Code what you <span class="grad-text">already know</span></h2>
+      <p class="mt-4 leading-7 sub">Any recipe can become a Claude Code skill. The skill does not paste commands for the agent to improvise. It calls <code class="font-mono text-sm">recap run</code>, so the same preflight and risk gates apply.</p>
+      <ul class="mt-5 space-y-3 leading-7">
+        <li><strong>Capture.</strong> With <code class="font-mono text-sm">recap hooks install</code>, the commands Claude Code runs land in the same timeline as yours.</li>
+        <li><strong>Guardrail.</strong> When a verified recipe exists, hooks block destructive prod commands that bypass it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- LOOP -->
+<section class="gutter py-12 sm:py-20" aria-labelledby="loop-h">
+  <div class="mx-auto max-w-2xl text-center">
+    <p class="eyebrow">Day to day</p>
+    <h2 id="loop-h" class="h2">Your daily loop, <span class="grad-text">faster</span></h2>
+  </div>
+  <div class="mx-auto mt-10 max-w-4xl space-y-4">
+    <div class="grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-navy/[0.04] p-5 dark:bg-white/5"><p class="text-xs font-bold uppercase tracking-widest sub">Before</p><p class="mt-1 font-semibold">Shell history and Slack archaeology</p></div>
+      <div class="rounded-2xl bg-peach-soft p-5 dark:bg-night-3"><p class="eyebrow">With recap</p><p class="mt-1 font-semibold"><code class="font-mono text-sm">recap find</code> and <code class="font-mono text-sm">recap run</code> by symptom</p></div>
+    </div>
+    <div class="grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-navy/[0.04] p-5 dark:bg-white/5"><p class="text-xs font-bold uppercase tracking-widest sub">Before</p><p class="mt-1 font-semibold">Retyping and swapping namespaces</p></div>
+      <div class="rounded-2xl bg-peach-soft p-5 dark:bg-night-3"><p class="eyebrow">With recap</p><p class="mt-1 font-semibold">Variables asked once, filled everywhere</p></div>
+    </div>
+    <div class="grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-navy/[0.04] p-5 dark:bg-white/5"><p class="text-xs font-bold uppercase tracking-widest sub">Before</p><p class="mt-1 font-semibold">Asking the one person who did it last time</p></div>
+      <div class="rounded-2xl bg-peach-soft p-5 dark:bg-night-3"><p class="eyebrow">With recap</p><p class="mt-1 font-semibold">A reviewed recipe in the team repo, with trust and verified dates</p></div>
+    </div>
+    <div class="grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-navy/[0.04] p-5 dark:bg-white/5"><p class="text-xs font-bold uppercase tracking-widest sub">Before</p><p class="mt-1 font-semibold">Explaining the same steps to a teammate or an agent, again</p></div>
+      <div class="rounded-2xl bg-peach-soft p-5 dark:bg-night-3"><p class="eyebrow">With recap</p><p class="mt-1 font-semibold">Hand them the recipe or the Claude Code skill</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SPACES & MODELS -->
+<section class="px-2 py-8 sm:px-6 sm:py-12" aria-labelledby="spaces-h">
+  <div class="panel-tint">
+    <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+      <div>
+        <p class="eyebrow">Spaces and models</p>
+        <h2 id="spaces-h" class="h2">One install, every <span class="grad-text">team</span></h2>
+        <p class="mt-4 leading-7 sub"><strong class="text-navy dark:text-snow">Spaces.</strong> Each space is a recipe repo. A team space publishes by pull request, a personal one pushes. recap picks the space from the folder you are in.</p>
+        <p class="mt-3 leading-7 sub"><strong class="text-navy dark:text-snow">Models.</strong> Use Ollama on your machine or any OpenAI-compatible API. The key lives in the Keychain, never in a config file.</p>
+      </div>
+      <div class="relative min-w-0 space-y-4">
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div class="card float p-4"><p class="font-bold">team</p><p class="mt-1 text-xs sub">publish: pr</p><p class="mt-2 inline-block rounded-full bg-amber/30 px-2 py-0.5 text-xs font-semibold">pull requests</p></div>
+          <div class="card float float-2 p-4"><p class="font-bold">personal</p><p class="mt-1 text-xs sub">publish: push</p><p class="mt-2 inline-block rounded-full bg-amber/30 px-2 py-0.5 text-xs font-semibold">direct push</p></div>
+        </div>
+        <div class="term">
+<pre class="term-body"><span class="t-p">$</span> recap spaces
+<span class="t-rec">●</span> runbooks     none   ~/runbooks</pre>
+        </div>
+        <div class="term sm:ml-8">
+<pre class="term-body"><span class="t-p">$</span> recap models test
+<span class="t-ok">✓</span> llama3.1:8b answered in 7.547s</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY -->
+<section id="privacy" class="gutter scroll-mt-20 py-12 sm:py-20" aria-labelledby="privacy-h">
+  <div class="mx-auto max-w-2xl text-center">
+    <p class="eyebrow">Privacy</p>
+    <h2 id="privacy-h" class="h2">Your work stays <span class="grad-text">yours</span></h2>
+  </div>
+  <div class="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
+    <div class="card">
+      <h3 class="h3">recap does</h3>
+      <ul class="mt-4 space-y-3 text-sm leading-6">
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true"><use href="#i-check"/></svg>Mask secrets locally before any model call or Git write</li>
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true"><use href="#i-check"/></svg>Keep raw timelines on your Mac</li>
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true"><use href="#i-check"/></svg>Store API keys in the Keychain</li>
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true"><use href="#i-check"/></svg>Ask before risky steps</li>
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true"><use href="#i-check"/></svg>Publish only what you reviewed</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="h3">recap doesn't</h3>
+      <ul class="mt-4 space-y-3 text-sm leading-6">
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true"><use href="#i-x"/></svg>Send telemetry or run a hosted service</li>
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true"><use href="#i-x"/></svg>Record audio</li>
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true"><use href="#i-x"/></svg>Delete anything on its own</li>
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true"><use href="#i-x"/></svg>Let a model change a command or lower a risk label</li>
+        <li class="flex gap-3"><svg class="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true"><use href="#i-x"/></svg>Put timelines, screenshots or transcripts in Git</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- GET STARTED -->
+<section id="start" class="gutter scroll-mt-20 pb-16 pt-8 sm:pb-24" aria-labelledby="start-h">
+  <div class="mx-auto max-w-3xl">
+    <p class="eyebrow text-center">Get started</p>
+    <h2 id="start-h" class="h2 text-center">Four steps to your first recipe</h2>
+    <ol class="mt-10 space-y-6">
+      <li>
+        <p class="font-bold">1. Install from source</p>
+        <div class="term mt-2"><pre class="term-body"><span class="t-p">$</span> git clone https://github.com/idestis/recap &amp;&amp; cd recap &amp;&amp; task pkg
+<span class="t-dim"># then open dist/Recap-*.pkg</span></pre></div>
+      </li>
+      <li>
+        <p class="font-bold">2. Add shell integration</p>
+        <div class="term mt-2"><pre class="term-body"><span class="t-p">$</span> recap shell-init --install
+<span class="t-ok">✓</span> Added to ~/.zshrc eval "$(recap shell-init zsh)"
+  <span class="t-dim">Open a new tab or run exec zsh to load it.</span></pre></div>
+      </li>
+      <li>
+        <p class="font-bold">3. Make a recipe repo your space</p>
+        <div class="term mt-2"><pre class="term-body"><span class="t-p">$</span> cd ~/runbooks &amp;&amp; recap init</pre></div>
+      </li>
+      <li>
+        <p class="font-bold">4. Start recording</p>
+        <div class="term mt-2"><pre class="term-body"><span class="t-p">$</span> recap start "checkout API returning 502s"</pre></div>
+      </li>
+    </ol>
+    <p class="mt-10 text-center"><a class="btn btn-primary min-h-12 px-7" href="docs/">Read the docs →</a></p>
+  </div>
+</section>
+
 </main>
-<footer><div class="wrap">
-<span>Apache-2.0 &middot; &copy; 2026 recap contributors</span>
-<span><a href="https://github.com/idestis/recap">Source on GitHub</a><a href="https://github.com/idestis/recap/releases">Releases</a></span>
-</div></footer>
-<script>
-document.getElementById("tt").addEventListener("click",function(){var r=document.documentElement,d=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches,n=d?"light":"dark";r.dataset.theme=n;try{localStorage.setItem("recap-theme",n)}catch(e){}});
-</script>
+<footer class="gutter border-t border-navy/10 py-8 text-sm sub dark:border-white/10">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <p>Apache-2.0 · © 2026 recap contributors</p>
+    <nav aria-label="Footer" class="flex flex-wrap gap-x-2 font-semibold">
+      <a class="flex min-h-11 items-center px-2 underline-offset-2 hover:underline" href="https://github.com/idestis/recap">Source</a>
+      <a class="flex min-h-11 items-center px-2 underline-offset-2 hover:underline" href="https://github.com/idestis/recap/releases">Releases</a>
+      <a class="flex min-h-11 items-center px-2 underline-offset-2 hover:underline" href="docs/">Docs</a>
+    </nav>
+  </div>
+</footer>
+</div>
 </body>
 </html>
