@@ -145,6 +145,73 @@ func (c *Client) JSON(ctx context.Context, system, user string, v any) error {
 	return nil
 }
 
+type embedRequest struct {
+	Model string   `json:"model"`
+	Input []string `json:"input"`
+}
+
+type embedResponse struct {
+	Data []struct {
+		Index     int       `json:"index"`
+		Embedding []float32 `json:"embedding"`
+	} `json:"data"`
+	Error *struct {
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// Embed returns one vector per input from POST /embeddings (OpenAI, Ollama
+// under /v1, and compatible hosts). Callers must pass redacted text only
+// (SPEC D-11).
+func (c *Client) Embed(ctx context.Context, inputs []string) ([][]float32, error) {
+	if len(inputs) == 0 {
+		return nil, nil
+	}
+	body, err := json.Marshal(embedRequest{Model: c.Model, Input: inputs})
+	if err != nil {
+		return nil, err
+	}
+	hr, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/embeddings", bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	hr.Header.Set("Content-Type", "application/json")
+	if c.Key != "" {
+		hr.Header.Set("Authorization", "Bearer "+c.Key)
+	}
+	resp, err := c.HTTP.Do(hr)
+	if err != nil {
+		return nil, fmt.Errorf("embedding request: %w", err)
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	if err != nil {
+		return nil, err
+	}
+	var out embedResponse
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("embedding response (%s): %s", resp.Status, truncate(string(raw), 200))
+	}
+	if out.Error != nil {
+		return nil, fmt.Errorf("embedding error (%s): %s", resp.Status, out.Error.Message)
+	}
+	if resp.StatusCode >= 300 || len(out.Data) != len(inputs) {
+		return nil, fmt.Errorf("embedding response %s: got %d vectors for %d inputs", resp.Status, len(out.Data), len(inputs))
+	}
+	vecs := make([][]float32, len(inputs))
+	for pos, d := range out.Data {
+		i := d.Index
+		if i < 0 || i >= len(inputs) || vecs[i] != nil {
+			i = pos // servers that omit index return in input order
+		}
+		if len(d.Embedding) == 0 || vecs[i] != nil {
+			return nil, errors.New("embedding response has empty or duplicate vectors")
+		}
+		vecs[i] = d.Embedding
+	}
+	return vecs, nil
+}
+
 // Models lists model IDs from GET /models (works for OpenAI and Ollama).
 func (c *Client) Models(ctx context.Context) ([]string, error) {
 	hr, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+"/models", nil)

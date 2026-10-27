@@ -266,6 +266,101 @@ func spacesCmd() *cobra.Command {
 	return c
 }
 
+// dedupOptions enables embedding dedup when an embedding model is configured
+// and its client can be built. Otherwise it returns the zero value, which keeps
+// the token-overlap path (SPEC D-14).
+func dedupOptions(cfg env, home string) recipe.DedupOptions {
+	m := cfg.Conf.Embedding
+	if !m.Enabled() {
+		return recipe.DedupOptions{}
+	}
+	cl, err := llm.New(m)
+	if err != nil {
+		return recipe.DedupOptions{}
+	}
+	return recipe.DedupOptions{Embedder: cl, Model: m.Name, CacheFile: filepath.Join(home, "embeddings.json"), Timeout: cl.HTTP.Timeout}
+}
+
+// embedCmd configures the embedding model used for dedup (SPEC D-14).
+func embedCmd() *cobra.Command {
+	c := &cobra.Command{Use: "embedding", Short: "Embedding model for dedup (optional; falls back to token overlap)"}
+	var m config.Model
+	set := &cobra.Command{
+		Use:   "set",
+		Short: "Choose the embedding provider and model",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, cfg, err := openStore()
+			if err != nil {
+				return err
+			}
+			if m.Provider != "ollama" && m.Provider != "openai" {
+				return errors.New("--provider must be ollama or openai (any compatible API)")
+			}
+			if m.Name == "" {
+				return errors.New("--model is required, e.g. nomic-embed-text")
+			}
+			cfg.Conf.Embedding = m
+			if err := cfg.Conf.Save(); err != nil {
+				return err
+			}
+			ok("Embedding model %s %s", m.Provider, bold(m.Name))
+			if m.Provider == "openai" && m.KeyEnv == "" {
+				note(dim("Store the API key in the Keychain: ") + bold("recap models key set --embedding"))
+			}
+			return nil
+		},
+	}
+	set.Flags().StringVar(&m.Provider, "provider", "ollama", "ollama | openai (any OpenAI-compatible API)")
+	set.Flags().StringVar(&m.Name, "model", "", "embedding model, e.g. nomic-embed-text or text-embedding-3-small")
+	set.Flags().StringVar(&m.BaseURL, "base-url", "", "API base URL (default per provider)")
+	set.Flags().StringVar(&m.KeyEnv, "key-env", "", "read the API key from this env var instead of the Keychain")
+	set.Flags().IntVar(&m.TimeoutS, "timeout", 0, "request timeout in seconds (default 120)")
+	off := &cobra.Command{
+		Use:   "off",
+		Short: "Turn embedding dedup off (token overlap is used)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, cfg, err := openStore()
+			if err != nil {
+				return err
+			}
+			cfg.Conf.Embedding = config.Model{}
+			if err := cfg.Conf.Save(); err != nil {
+				return err
+			}
+			ok("Embedding dedup off")
+			return nil
+		},
+	}
+	test := &cobra.Command{
+		Use:   "test",
+		Short: "Check the endpoint returns an embedding",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, cfg, err := openStore()
+			if err != nil {
+				return err
+			}
+			cl, err := llm.New(cfg.Conf.Embedding)
+			if err != nil {
+				return err
+			}
+			ctx, cancel := context.WithTimeout(cmd.Context(), cl.HTTP.Timeout)
+			defer cancel()
+			start := time.Now()
+			v, err := cl.Embed(ctx, []string{"ping"})
+			if err != nil {
+				return err
+			}
+			if flagJSON {
+				return printJSON(map[string]any{"ok": true, "model": cl.Model, "dimensions": len(v[0]), "ms": time.Since(start).Milliseconds()})
+			}
+			ok("%s returned %d dimensions in %s", bold(cl.Model), len(v[0]), time.Since(start).Round(time.Millisecond))
+			return nil
+		},
+	}
+	c.AddCommand(set, off, test)
+	return c
+}
+
 func modelsCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "models",
@@ -277,7 +372,12 @@ func modelsCmd() *cobra.Command {
 			}
 			m := cfg.Conf.ModelFor(cfg.Space)
 			if flagJSON {
-				return printJSON(map[string]any{"space": cfg.Space.Name, "model": m, "enabled": m.Enabled()})
+				return printJSON(map[string]any{"space": cfg.Space.Name, "model": m, "enabled": m.Enabled(), "embedding": cfg.Conf.Embedding, "embedding_enabled": cfg.Conf.Embedding.Enabled()})
+			}
+			if e := cfg.Conf.Embedding; e.Enabled() {
+				defer ok("embeddings %s %s %s", e.Provider, bold(e.Name), dim(firstNonEmpty(e.BaseURL, llm.DefaultBaseURL(e.Provider))))
+			} else {
+				defer note(dim("dedup uses token overlap; for embeddings: ") + bold("recap models embedding set --provider ollama --model nomic-embed-text"))
 			}
 			if !m.Enabled() {
 				fmt.Println(dim("○ no model — recipes are drafted with templates"))
@@ -334,6 +434,8 @@ func modelsCmd() *cobra.Command {
 	set.Flags().BoolVar(&forSpace, "for-space", false, "set for the current space only")
 
 	key := &cobra.Command{Use: "key", Short: "Store or remove the API key in the Keychain"}
+	var keyEmbedding bool
+	key.PersistentFlags().BoolVar(&keyEmbedding, "embedding", false, "use the embedding model's endpoint instead of the drafting model's")
 	key.AddCommand(&cobra.Command{
 		Use:   "set",
 		Short: "Read the API key from stdin or a hidden prompt into the Keychain",
@@ -343,6 +445,9 @@ func modelsCmd() *cobra.Command {
 				return err
 			}
 			m := cfg.Conf.ModelFor(cfg.Space)
+			if keyEmbedding {
+				m = cfg.Conf.Embedding
+			}
 			var k []byte
 			if term.IsTerminal(int(os.Stdin.Fd())) {
 				fmt.Print(amber("? ") + "API key for " + llm.KeyAccount(m) + dim(" (hidden) › "))
@@ -371,7 +476,11 @@ func modelsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			acct := llm.KeyAccount(cfg.Conf.ModelFor(cfg.Space))
+			km := cfg.Conf.ModelFor(cfg.Space)
+			if keyEmbedding {
+				km = cfg.Conf.Embedding
+			}
+			acct := llm.KeyAccount(km)
 			if err := llm.DeleteKey(acct); err != nil {
 				return err
 			}
@@ -439,7 +548,7 @@ func modelsCmd() *cobra.Command {
 			return nil
 		},
 	}
-	c.AddCommand(set, key, test, list)
+	c.AddCommand(set, key, test, list, embedCmd())
 	return c
 }
 

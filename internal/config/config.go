@@ -49,6 +49,7 @@ type Config struct {
 	Current   string  `yaml:"current,omitempty"`
 	Guardrail *bool   `yaml:"guardrail,omitempty"`
 	Model     Model   `yaml:"model,omitempty"`
+	Embedding Model   `yaml:"embedding,omitempty"` // embedding model for dedup (SPEC D-14)
 	Spaces    []Space `yaml:"spaces,omitempty"`
 
 	path string

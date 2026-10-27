@@ -303,15 +303,21 @@ func Library(repo string) ([]Match, error) {
 }
 
 // Dedup finds the closest recipe with the same structured key (tools + prod class)
-// and a similar meaning. Embeddings replace the token overlap in the MVP (SPEC D-14).
-func Dedup(repo string, r *Recipe) (*Match, error) {
+// and a similar meaning, by token overlap (SPEC D-14).
+func Dedup(repo string, r *Recipe) (*Match, error) { return DedupWith(repo, r, DedupOptions{}) }
+
+// DedupWith is Dedup with optional embeddings. The structured key always gates
+// first (same tool, never prod with non-prod); embeddings only rank what passes.
+// Any embedding problem falls back silently to token overlap.
+func DedupWith(repo string, r *Recipe, opt DedupOptions) (*Match, error) {
 	lib, err := Library(repo)
 	if err != nil {
 		return nil, err
 	}
-	draftTokens := tokens(r.Title + " " + r.Situation + " " + strings.Join(r.Tools, " ") + " " + r.stepsMarkdown())
+	draftText := r.Title + " " + r.Situation + " " + strings.Join(r.Tools, " ") + " " + r.stepsMarkdown()
+	draftTokens := tokens(draftText)
 	draftProd := strings.HasSuffix(r.RiskLabel(), "-prod")
-	var best *Match
+	var gated []cand
 	for i := range lib {
 		m := lib[i]
 		b, _ := os.ReadFile(m.Path)
@@ -321,7 +327,17 @@ func Dedup(repo string, r *Recipe) (*Match, error) {
 		if !sharesTool(string(b), r.Tools) {
 			continue
 		}
-		m.Score = jaccard(draftTokens, tokens(string(b)))
+		gated = append(gated, cand{m: m, text: string(b)})
+	}
+	if opt.Embedder != nil {
+		if best, ok := embedDedup(opt, draftText, gated); ok {
+			return best, nil
+		}
+	}
+	var best *Match
+	for _, c := range gated {
+		m := c.m
+		m.Score = jaccard(draftTokens, tokens(c.text))
 		if m.Score >= 0.3 && (best == nil || m.Score > best.Score) {
 			mm := m
 			best = &mm
