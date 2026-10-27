@@ -15,6 +15,7 @@ import (
 	"github.com/idestis/recap/internal/publish"
 	"github.com/idestis/recap/internal/recipe"
 	"github.com/idestis/recap/internal/redact"
+	"github.com/idestis/recap/internal/review"
 	"github.com/idestis/recap/internal/risk"
 	"github.com/idestis/recap/internal/session"
 )
@@ -25,6 +26,7 @@ type stopResult struct {
 	Space     string          `json:"space,omitempty"`
 	Fixed     bool            `json:"fixed"`
 	Kept      int             `json:"kept"`
+	Maybe     int             `json:"maybe"`
 	Excluded  int             `json:"excluded"`
 	Masked    int             `json:"masked"`
 	Model     string          `json:"model,omitempty"`
@@ -82,18 +84,28 @@ Non-interactive: --fixed / --not-fixed (or --yes = fixed), --publish, --json.`,
 			rs := loadRepoSettings(cfg.Repo)
 			res := stopResult{Handle: h, Space: cfg.Space.Name}
 
-			// Review: related items preselected, failed commands excluded (SPEC D-10).
-			kept, excluded := review(se, evs, rs.ProdContexts)
+			// Review: related preselected, maybe shown unticked, failed commands
+			// excluded (SPEC D-10). Non-interactive runs keep related only.
+			var sorter *llmUse
+			if m := cfg.Conf.ModelFor(cfg.Space); m.Enabled() && !noModel {
+				if cl, err := llm.New(m); err == nil {
+					sorter = &llmUse{client: cl}
+				}
+			}
+			items := reviewItems(cmd.Context(), se, evs, sorter)
+			_, nMaybe, nExcluded := review.Counts(items)
+			kept := review.Pick(evs, items, review.Related)
+			maybe, excluded := nMaybe, nExcluded
 			isFixed := fixed || (flagYes && !notFixed)
 			if interactive() && !fixed && !notFixed {
-				kept, excluded = reviewInteractive(se, evs, kept, rs.ProdContexts)
+				kept, maybe, excluded = reviewInteractive(evs, items, rs.ProdContexts)
 				if isFixed, err = confirm("Did this fix it?", true); err != nil {
 					return err
 				}
 			} else if !flagJSON {
-				printReviewSummary(kept, excluded)
+				printReviewSummary(kept, maybe, excluded)
 			}
-			res.Kept, res.Excluded, res.Fixed = len(kept), excluded, isFixed
+			res.Kept, res.Maybe, res.Excluded, res.Fixed = len(kept), maybe, excluded, isFixed
 
 			now := time.Now()
 			se.StoppedAt = &now
@@ -221,73 +233,94 @@ Non-interactive: --fixed / --not-fixed (or --yes = fixed), --publish, --json.`,
 	return c
 }
 
-// review splits events into kept (related) and excluded (failed commands).
-func review(se *session.Session, evs []session.Event, prod []string) ([]session.Event, int) {
-	var kept []session.Event
-	excluded := 0
-	for _, e := range evs {
-		if e.Kind == "cmd" && e.Exit != nil && *e.Exit != 0 {
-			excluded++
-			continue
-		}
-		kept = append(kept, e)
+// reviewItems sorts events into related / maybe / excluded with the rules in
+// internal/review; a configured model may then promote maybe items (SPEC D-10).
+// Any model error falls back to the rules.
+func reviewItems(ctx context.Context, se *session.Session, evs []session.Event, m *llmUse) []review.Item {
+	items := review.Classify(se, evs, recipe.Contexts(evs))
+	if m == nil {
+		return items
 	}
-	return kept, excluded
+	sorted, err := review.SortMaybe(ctx, m.client, se, evs, items)
+	if err != nil {
+		if !flagJSON {
+			fmt.Fprintln(os.Stderr, amber("! ")+"model sorting failed, using rules: "+err.Error())
+		}
+		return items
+	}
+	return sorted
 }
 
-// reviewInteractive lets the user untick noise and re-include failed commands.
-// Labels are redacted: secrets never show up on screen either.
-func reviewInteractive(se *session.Session, evs, kept []session.Event, prod []string) ([]session.Event, int) {
+// llmUse carries a ready client for the review sorter.
+type llmUse struct{ client *llm.Client }
+
+// reviewInteractive shows related (ticked), maybe (unticked) and excluded
+// (unticked, last). Labels are redacted: secrets never show up on screen.
+// It returns the kept events and how many maybe / excluded items were left out.
+func reviewInteractive(evs []session.Event, items []review.Item, prod []string) (kept []session.Event, maybe, excluded int) {
 	if len(evs) == 0 {
-		return kept, 0
+		return nil, 0, 0
 	}
+	ctxs := recipe.Contexts(evs)
 	var opts []option
 	var selected []string
-	ctxs := recipe.Contexts(evs)
-	for i, e := range evs {
-		id := strconv.Itoa(i)
-		text := redact.Redact(e.Text).Text
-		if len(text) > 90 {
-			text = text[:87] + "…"
-		}
-		var tag string
-		switch {
-		case e.Kind == "cmd" && e.Exit != nil && *e.Exit != 0:
-			tag = "failed  "
-		case e.Kind == "cmd":
-			if r := risk.Classify(e.Text, ctxs[i], prod); r.Changes() {
-				tag = r.Label()
-				for len(tag) < 8 {
-					tag += " "
-				}
-			} else {
-				tag = "cmd     "
+	for _, b := range []review.Bucket{review.Related, review.Maybe, review.Excluded} {
+		for _, it := range items {
+			if it.Bucket != b {
+				continue
 			}
-			selected = append(selected, id)
-		default:
-			tag = (e.Kind + "        ")[:8]
-			selected = append(selected, id)
+			e := evs[it.Index]
+			id := strconv.Itoa(it.Index)
+			text := redact.Redact(e.Text).Text
+			if len(text) > 90 {
+				text = text[:87] + "…"
+			}
+			var tag string
+			switch {
+			case b == review.Excluded:
+				tag = "failed"
+			case b == review.Maybe:
+				tag = "maybe"
+			case e.Kind == "cmd":
+				tag = "cmd"
+				if r := risk.Classify(e.Text, ctxs[it.Index], prod); r.Changes() {
+					tag = r.Label()
+				}
+			default:
+				tag = e.Kind
+			}
+			label := (tag + "        ")[:8] + " " + text
+			if b == review.Maybe {
+				label += "  " + dim("("+it.Reason+")")
+			}
+			opts = append(opts, option{id, label})
+			if b == review.Related {
+				selected = append(selected, id)
+			}
 		}
-		opts = append(opts, option{id, tag + " " + text})
 	}
-	chosen, okk := pick("Keep for the recipe", "space toggles · enter confirms · failed commands start unticked", opts, selected)
+	chosen, okk := pick("Keep for the recipe", "space toggles · enter confirms · maybe and failed items start unticked", opts, selected)
 	if !okk {
-		return kept, len(evs) - len(kept)
+		chosen = selected
 	}
 	set := map[string]bool{}
 	for _, c := range chosen {
 		set[c] = true
 	}
-	var out []session.Event
 	for i, e := range evs {
-		if set[strconv.Itoa(i)] {
-			out = append(out, e)
+		switch {
+		case set[strconv.Itoa(i)]:
+			kept = append(kept, e)
+		case items[i].Bucket == review.Excluded:
+			excluded++
+		default:
+			maybe++
 		}
 	}
-	return out, len(evs) - len(out)
+	return kept, maybe, excluded
 }
 
-func printReviewSummary(kept []session.Event, excluded int) {
+func printReviewSummary(kept []session.Event, maybe, excluded int) {
 	var cmds, notes, links int
 	for _, e := range kept {
 		switch e.Kind {
@@ -300,6 +333,7 @@ func printReviewSummary(kept []session.Event, excluded int) {
 		}
 	}
 	fmt.Printf("  %s %s\n", bold(fmt.Sprintf("Related   %2d", len(kept))), dim(fmt.Sprintf("%d commands · %d notes · %d links/files", cmds, notes, links)))
+	fmt.Printf("  %s %s\n", dim(fmt.Sprintf("Maybe     %2d", maybe)), dim("left out: read-only noise, other context or namespace, far from the rest"))
 	fmt.Printf("  %s %s\n", dim(fmt.Sprintf("Excluded  %2d", excluded)), dim("failed commands"))
 }
 
