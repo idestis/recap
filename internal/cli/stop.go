@@ -243,6 +243,7 @@ func reviewInteractive(se *session.Session, evs, kept []session.Event, prod []st
 	}
 	var opts []option
 	var selected []string
+	ctxs := recipe.Contexts(evs)
 	for i, e := range evs {
 		id := strconv.Itoa(i)
 		text := redact.Redact(e.Text).Text
@@ -254,7 +255,7 @@ func reviewInteractive(se *session.Session, evs, kept []session.Event, prod []st
 		case e.Kind == "cmd" && e.Exit != nil && *e.Exit != 0:
 			tag = "failed  "
 		case e.Kind == "cmd":
-			if r := risk.Classify(e.Text, se.KubeContext, prod); r.Changes() {
+			if r := risk.Classify(e.Text, ctxs[i], prod); r.Changes() {
 				tag = r.Label()
 				for len(tag) < 8 {
 					tag += " "

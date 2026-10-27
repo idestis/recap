@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/* Dark mode follows the data-theme attribute (set before first paint). */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+  --color-navy: #1a212c;
+  --color-slate-ink: #435062;
+  --color-amber: #ffbe55;
+  --color-coral: #ff5a47;
+  --color-coral-deep: #b9301f;
+  --color-peach: #fde7da;
+  --color-peach-soft: #fff4ed;
+  --color-rec: #e5484d;
+  --color-night: #0d1219;
+  --color-night-2: #141b26;
+  --color-night-3: #1d2635;
+  --color-snow: #e8ecf2;
+  --color-mist: #a9b4c4;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --radius-page: 2rem;
+  --shadow-soft: 0 12px 32px -14px rgb(26 33 44 / 0.28);
+  --shadow-lift: 0 30px 70px -28px rgb(26 33 44 / 0.45);
+  --shadow-cta: 0 10px 24px -10px rgb(255 90 71 / 0.65);
+  --background-image-sunrise: linear-gradient(135deg, #ffbe55, #ff5a47);
+}
+
+@layer base {
+  html {
+    scroll-padding-top: 5.5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Smooth scrolling is done in main.js for same-page links only, so a page
+     opened at #section lands there instead of animating from the top. */
+  body {
+    @apply bg-white text-navy font-sans antialiased dark:bg-night-2 dark:text-snow;
+    min-width: 320px;
+  }
+  :focus-visible {
+    outline: 3px solid #e2410f;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  [data-theme="dark"] :focus-visible { outline-color: #ffbe55; }
+  summary { cursor: pointer; }
+}
+
+@layer components {
+  /* Full-bleed page: sections span the window; .gutter keeps content at a
+     readable width (1200px) with breathing room on small screens. */
+  .page { @apply flex min-h-dvh flex-col overflow-x-clip; }
+  .gutter {
+    --gutter: 1rem;
+    padding-inline: max(var(--gutter), calc((100% - 1200px) / 2));
+    @variant sm { --gutter: 2rem; }
+    @variant lg { --gutter: 3rem; }
+  }
+  /* Bands: full-width backgrounds that separate sections without boxes. */
+  .band-hero {
+    background:
+      radial-gradient(70rem 36rem at 50% -8%, #ffd9c2 0%, rgb(255 217 194 / 0) 70%),
+      linear-gradient(180deg, #fff3ea 0%, #ffffff 100%);
+  }
+  [data-theme="dark"] .band-hero {
+    background:
+      radial-gradient(70rem 36rem at 50% -8%, rgb(255 106 85 / 0.18) 0%, rgb(255 106 85 / 0) 70%),
+      linear-gradient(180deg, #161c28 0%, #121722 100%);
+  }
+  .band-soft { @apply bg-[#fffaf6] dark:bg-night; }
+  .band-tint { @apply bg-peach dark:bg-night-3; }
+  .sub { @apply text-slate-ink dark:text-mist; }
+  .grad-text {
+    background-image: linear-gradient(100deg, #ef7a10, #e5402e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  [data-theme="dark"] .grad-text { background-image: linear-gradient(100deg, #ffbe55, #ff6a55); }
+
+  .eyebrow {
+    @apply text-[0.7rem] font-bold uppercase tracking-[0.18em] text-coral-deep dark:text-amber;
+  }
+  .h2 { @apply mt-2 text-balance text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl; }
+  .h3 { @apply text-lg font-bold; }
+
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold no-underline transition;
+  }
+  .btn-primary { @apply bg-sunrise text-navy shadow-cta hover:brightness-105 active:translate-y-px; }
+  .btn-ghost {
+    @apply border border-navy/20 bg-white text-navy hover:border-navy/50 dark:border-white/20 dark:bg-white/5 dark:text-snow dark:hover:border-white/50;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-navy/10 bg-white px-3 py-1 text-xs font-semibold text-navy shadow-soft dark:border-white/10 dark:bg-night-3 dark:text-snow;
+  }
+  .glass {
+    @apply border border-white/60 bg-white/70 text-navy backdrop-blur-xl dark:border-white/15 dark:bg-night-3/70 dark:text-snow;
+    box-shadow: 0 18px 50px -20px rgb(26 33 44 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.5);
+  }
+  .card {
+    @apply rounded-2xl border border-navy/10 bg-white p-5 shadow-soft dark:border-white/10 dark:bg-night-3;
+  }
+  .panel-tint { @apply contents; }
+
+  /* Terminal window: dark in both themes, scrolls inside itself. */
+  .term {
+    @apply overflow-hidden rounded-2xl border border-white/10 bg-[#10161f] text-[#e6eaf0] shadow-lift;
+  }
+  .term-bar { @apply flex items-center gap-1.5 border-b border-white/10 bg-white/5 px-3 py-2.5 text-xs text-[#9aa6b8]; }
+  .term-bar i { @apply block size-2.5 rounded-full bg-white/20; }
+  .term-body {
+    @apply overflow-x-auto p-4 font-mono text-[12px] leading-[1.65] whitespace-pre sm:text-[12.5px];
+    tab-size: 2;
+  }
+  .t-p { color: #ffbe55; }
+  .t-ok { color: #5fd38d; }
+  .t-err { color: #ff8b80; }
+  .t-dim { color: #8d99ab; }
+  .t-warn { color: #ffbe55; }
+  .t-rec { color: #ff6b70; }
+  .t-b { color: #fff; font-weight: 700; }
+
+  /* Code block (docs) */
+  .code {
+    @apply overflow-x-auto rounded-xl bg-[#10161f] p-4 font-mono text-[12.5px] leading-[1.65] whitespace-pre text-[#e6eaf0];
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[0.7rem] font-bold;
+  }
+  .badge-safe { @apply bg-emerald-100 text-emerald-900 dark:bg-emerald-400/15 dark:text-emerald-300; }
+  .badge-risky { @apply bg-red-100 text-red-900 dark:bg-red-400/15 dark:text-red-300; }
+
+  .rec-dot {
+    @apply inline-block size-2 rounded-full bg-rec;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .rec-dot { animation: blink 1.4s steps(2, jump-none) infinite; }
+    .float { animation: bob 6s ease-in-out infinite; will-change: transform; }
+    /* main.js pauses animations in sections that are off screen. */
+    .is-offscreen .float, .is-offscreen .rec-dot { animation-play-state: paused; }
+    .float-2 { animation-delay: -2s; }
+    .float-3 { animation-delay: -4s; }
+  }
+
+  .cursor::after {
+    content: "";
+    display: inline-block;
+    width: 0.55em;
+    height: 1.1em;
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    background: #ffbe55;
+  }
+
+  /* Docs prose */
+  .doc h2 { @apply mt-14 border-t border-navy/10 pt-8 text-2xl font-extrabold tracking-tight first:mt-0 first:border-0 first:pt-0 dark:border-white/10; }
+  .doc h3 { @apply mt-8 mb-2 text-base font-bold; }
+  .doc p, .doc li { @apply leading-7; }
+  .doc p { @apply my-3 text-slate-ink dark:text-mist; }
+  .doc ul { @apply my-3 list-disc space-y-1 pl-5 text-slate-ink dark:text-mist; }
+  .doc ol { @apply my-3 list-decimal space-y-1 pl-5 text-slate-ink dark:text-mist; }
+  .doc code:not(.code code) {
+    @apply rounded-md bg-navy/6 px-1.5 py-0.5 font-mono text-[0.85em] text-navy dark:bg-white/10 dark:text-snow;
+    overflow-wrap: anywhere;
+  }
+  .doc .code { @apply my-4; }
+  .doc a:not(.btn) { @apply font-semibold text-coral-deep underline underline-offset-2 dark:text-amber; }
+  .doc table { @apply w-full border-collapse text-sm; }
+  .doc th { @apply border-b border-navy/15 py-2 pr-4 text-left font-bold dark:border-white/15; }
+  .doc td { @apply border-b border-navy/10 py-2 pr-4 align-top text-slate-ink dark:border-white/10 dark:text-mist; }
+  .doc td:first-child { @apply whitespace-nowrap; }
+  .doc .note { @apply my-4 rounded-xl border-l-4 border-amber bg-peach-soft p-4 text-sm dark:bg-night-3; }
+  .doc .note p { @apply my-0; }
+}
+
+@keyframes blink { 50% { opacity: 0.2; } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* Landing <-> docs: cross-fade instead of a white flash between pages. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+}

@@ -454,16 +454,13 @@ func hookCmd() *cobra.Command {
 			if command == "" {
 				return nil
 			}
-			st, cfg, err := openStore()
+			_, cfg, err := openStore()
 			if err != nil || !cfg.Guardrail {
 				return nil
 			}
+			// The guard checks the context the command will actually hit right
+			// now; sessions themselves only use recorded switches.
 			ctx := store.KubeContext()
-			if h := os.Getenv("RECAP_SESSION"); h != "" {
-				if se, err := st.LoadSession(h); err == nil {
-					ctx = se.KubeContext
-				}
-			}
 			r := risk.Classify(command, ctx, loadRepoSettings(cfg.Repo).ProdContexts)
 			if !r.Prod || r.Level == risk.Safe {
 				return nil
@@ -532,4 +529,63 @@ func (h hookInput) exitCode() *int {
 		return r.ExitCode
 	}
 	return nil
+}
+
+func skillCmd() *cobra.Command {
+	var user bool
+	c := &cobra.Command{
+		Use:   "skill <recipe name>",
+		Short: "Turn a recipe into a Claude Code skill",
+		Long: `Write a recipe as a Claude Code skill. The skill runs steps through recap run,
+so preflight, risk prompts and trust tracking still apply.
+
+  recap skill fix-checkout-api-502s           # ./.claude/skills/<id>/SKILL.md (this project)
+  recap skill "pods out of memory" --user     # ~/.claude/skills/<id>/SKILL.md (all projects)`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, cfg, err := openStore()
+			if err != nil {
+				return err
+			}
+			if err := needRepo(cfg); err != nil {
+				return err
+			}
+			m, err := resolveRecipe(cfg.Repo, strings.Join(args, " "))
+			if err != nil {
+				return err
+			}
+			b, err := os.ReadFile(m.Path)
+			if err != nil {
+				return err
+			}
+			md, err := recipe.Skill(string(b))
+			if err != nil {
+				return err
+			}
+			root := ".claude"
+			if user {
+				h, _ := os.UserHomeDir()
+				root = filepath.Join(h, ".claude")
+			}
+			path := filepath.Join(root, "skills", m.ID, "SKILL.md")
+			if flagDryRun {
+				fmt.Print(md)
+				return nil
+			}
+			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+				return err
+			}
+			if err := os.WriteFile(path, []byte(md), 0o644); err != nil {
+				return err
+			}
+			if flagJSON {
+				return printJSON(map[string]string{"skill": m.ID, "path": path})
+			}
+			ok("Wrote %s", path)
+			note(dim("Claude Code can now use it; it runs steps through recap run, so risk gates still apply."))
+			return nil
+		},
+	}
+	c.Flags().BoolVar(&user, "user", false, "write to ~/.claude/skills (all projects) instead of ./.claude/skills")
+	return c
 }

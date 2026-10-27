@@ -62,7 +62,7 @@ func Execute() int {
 	add("setup", initCmd(), spacesCmd(), shellInitCmd(), hooksCmd(), modelsCmd())
 	add("session", startCmd(), joinCmd(), leaveCmd(), statusCmd(), ctxCmd(), timelineCmd(), stopCmd())
 	add("recipes", findCmd(), runCmd(), applyCmd(), publishCmd(), pruneCmd())
-	add("agents", mcpCmd(), loginCmd("slack"), loginCmd("wispr"), loginCmd("github"))
+	add("agents", skillCmd(), mcpCmd(), loginCmd("slack"), loginCmd("wispr"), loginCmd("github"))
 	root.AddCommand(activeCmd(), hookCmd(), versionCmd())
 
 	if err := root.Execute(); err != nil {

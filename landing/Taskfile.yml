@@ -1,15 +1,24 @@
 version: '3'
 tasks:
+  install:
+    desc: Install dependencies from the lockfile
+    cmds:
+      - npm ci
   dev:
-    desc: Serve the landing page on http://localhost:4321
+    desc: Dev server
     cmds:
-      - python3 -m http.server 4321
+      - npm run dev
+  build:
+    desc: Production build into dist/
+    cmds:
+      - npm run build
   check:
-    desc: Validate XML and enforce zero third-party requests
+    desc: Build, then enforce zero third-party requests and valid XML
+    deps: [build]
     cmds:
-      - xmllint --noout sitemap.xml logo.svg favicon.svg
+      - xmllint --noout public/sitemap.xml public/logo.svg public/favicon.svg
       - |
-        if grep -nE 'src="http|href="http://|<link[^>]+rel="stylesheet"[^>]+href="(https?:)?//|<script[^>]+src="(https?:)?//|<iframe|<img[^>]+src="(https?:)?//|src="//|href="//' index.html 404.html; then echo "FAIL: third-party or insecure reference"; exit 1; fi
+        if grep -rnE 'src="(https?:)?//|href="http://|<script[^>]+src="(https?:)?//|<link[^>]+rel="stylesheet"[^>]+href="(https?:)?//|<iframe' --include='*.html' dist; then echo "FAIL: third-party or insecure reference in HTML"; exit 1; fi
       - |
-        if grep -nE 'url\(\s*["'"'"']?(https?:)?//|url\(http|@import' styles.css; then echo "FAIL: external reference in CSS"; exit 1; fi
+        if grep -rnE 'url\(\s*["'"'"']?(https?:)?//|url\(http|@import url\(' --include='*.css' dist; then echo "FAIL: external reference in CSS"; exit 1; fi
       - echo "check ok"

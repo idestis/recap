@@ -4,11 +4,13 @@
 
 **Fix it once. Never figure it out again.**
 
-recap captures what you and your AI agents do during an incident (terminal tabs, Claude Code, notes, links, screenshots, and later Slack and call transcripts) and turns the parts you approve into clean, risk-labeled Markdown **recipes** in your own Git repo. Next time, you or an agent find the recipe and run it with a preflight instead of figuring it out again.
+We do a lot of work by hand, and we do it often: an incident, a local database reset, onboarding a service, rotating a certificate, a release chore. recap records that work while you do it — the commands in your terminal tabs and Claude Code, your decisions, notes, links and files — and turns the parts you approve into clean, risk-labeled Markdown **recipes** in your own Git repo.
 
-recap is local first, brings your own model, and is not an incident management tool. It works next to the tools you already use.
+Later that context is yours to reuse: run the recipe again with new values (`recap run`), or hand it to Claude Code as a skill (`recap skill`).
 
-> **Status: early development.** The CLI works end to end (sessions, tab join/leave, capture, redaction, risk, model drafting, dedup, publish, apply, find, run with preflight, Claude Code guardrail). The macOS menu bar app and `.pkg` installer build from source. Website: <https://idestis.github.io/recap/>
+Start a session either way: `recap start "…"` in a terminal, or press ⌥⇧Space anywhere and type (or dictate) what you're doing. recap is local first, brings your own model, and works next to the tools you already use.
+
+> **Status: early development.** The CLI works end to end (sessions, tab join/leave, capture, redaction, risk, model drafting, dedup, publish, apply, find, run with preflight, Claude Code skills and guardrail). The macOS menu bar app and `.pkg` installer build from source. Website: <https://idestis.github.io/recap/>
 
 ---
 
@@ -43,37 +45,37 @@ The space is chosen by `--space`, then `RECAP_SPACE`, then the working directory
 
 Any OpenAI-compatible API: `recap models set --provider openai --model gpt-4.1-mini [--base-url https://…/v1]`, then `recap models key set` (Keychain). Local: `--provider ollama`. `recap models test` checks it. Models only reword the draft after redaction; commands and risk floors come from rules.
 
-Then:
+Then (real output, trimmed):
 
 ```console
 $ recap start "checkout API returning 502s"
-● Recording  2026-10-22.1  checkout-api-returning-502s
-  kube prod-eu
+● Recording  2026-10-27.1  checkout-api-returning-502s
+  space runbooks
   New tab? run: recap join   ·   add context: recap ctx "…"
 
+$ kubectx prod-eu
 $ kubectl get pods -n checkout
 $ kubectl set resources deploy/checkout-api -n checkout --limits=memory=1Gi
-$ recap ctx "rollback ruled out, migration 0142 already ran https://grafana.acme.io/d/checkout"
+$ recap ctx "rollback ruled out, migration 0142 already ran https://grafana.example.com/d/checkout"
 ✓ Note added · decision
-✓ Dashboard linked https://grafana.acme.io/d/checkout
+✓ Dashboard linked https://grafana.example.com/d/checkout
 
-$ recap stop
-  Related    4 2 commands (1 changes) · 1 notes · 1 links/files
-  Excluded   0 failed commands
-? Did this fix it? [y/N] › y
-✓ Draft: "Checkout API returning 502s" · risky-prod · 2 steps
-✓ Wrote sessions/2026-10-22.1-checkout-api-returning-502s/
-  Review delta.md, then: recap apply 2026-10-22.1
+$ recap stop                           # pick what to keep, then "Did this fix it?"
+  Related    7 5 commands · 1 notes · 1 links/files
+  Excluded   1 failed commands
+✓ Draft: "Fix Checkout API 502s" · risky-prod · 5 steps
+✓ Wrote sessions/2026-10-27.1-checkout-api-returning-502s/ in runbooks
 
-$ recap apply 2026-10-22.1
-✓ Added recipes/checkout-api-returning-502s.md
-✓ Removed session folder (still in Git history)
+$ recap apply checkout-api-returning-502s
+✓ Added recipes/fix-checkout-api-502s.md
 
-$ recap find "pods out of memory"
-$ recap run "pods out of memory"      # by name or symptom; asks for {namespace}, {deployment}, …
+$ recap run "pods out of memory"       # by name or symptom; asks for {context}, {namespace}, …
+$ recap skill fix-checkout-api-502s    # .claude/skills/fix-checkout-api-502s/SKILL.md
 ```
 
-Desktop prototype: see [desktop/RecapTray/README.md](desktop/RecapTray/README.md).
+recap never guesses where you are: the Kubernetes context of a step is the last `kubectx` / `kubectl config use-context` you ran in the session (or `--context` on the command itself), and it becomes a `{context}` variable in the recipe.
+
+Menu bar app: see [desktop/RecapTray/README.md](desktop/RecapTray/README.md).
 
 ## How it works
 
@@ -81,12 +83,13 @@ Desktop prototype: see [desktop/RecapTray/README.md](desktop/RecapTray/README.md
 capture → redact → risk rules → draft → dedup → review → session folder → apply → recipes/
 ```
 
-- **Capture:** attached terminal tabs (`recap join` / `recap leave`), Claude Code hooks, `recap ctx` and the ⌥⇧Space overlay. Slack, Wispr Notetaker transcripts and Git commits are pulled at stop (v0.2).
+- **Capture:** attached terminal tabs (`recap join` / `recap leave`), Claude Code hooks, `recap ctx` and the ⌥⇧Space overlay. Planned: Slack threads, Wispr Notetaker transcripts and Git commits pulled at stop.
 - **Redact:** secrets are masked locally before anything is drafted or written.
-- **Risk:** deterministic rules label steps safe / risky / destructive, and prod. A model may only raise risk.
-- **Draft:** templates today; your own model (OpenAI-compatible or Ollama) in the MVP.
+- **Risk:** deterministic rules label steps safe / risky / destructive (kubectl, terraform, helm, docker, cloud CLIs, SQL), and prod from the recorded context. A model may only raise risk.
+- **Draft:** templates, or your own model (Ollama or any OpenAI-compatible API) to name the recipe and write the situation, preconditions and step titles. Commands are never changed.
 - **Dedup:** a close match becomes a variant of an existing recipe, never a duplicate, and staging fixes never merge into prod recipes.
-- **Apply:** sessions are temporary changes (like OpenSpec); recipes are the source of truth.
+- **Publish and apply:** a session folder goes to the space's repo by pull request or push; `recap apply` folds it into `recipes/`, which is the source of truth.
+- **Reuse:** `recap run` asks for variables and shows a preflight; `recap skill` hands the recipe to Claude Code.
 
 ## Commands
 
@@ -95,6 +98,7 @@ capture → redact → risk rules → draft → dedup → review → session fol
 | `recap init`, `spaces`, `shell-init`, `hooks install`, `models` | setup |
 | `recap start`, `join`, `leave`, `status`, `ctx`, `timeline`, `stop` | sessions |
 | `recap find`, `run`, `apply`, `publish`, `prune` | recipes |
+| `recap skill <recipe>` | turn a recipe into a Claude Code skill (runs through `recap run`) |
 | `recap mcp`, `slack`, `wispr`, `github` | agents and integrations (planned) |
 | `--json`, `--yes`, `--dry-run`, `--space` | for agents and CI |
 

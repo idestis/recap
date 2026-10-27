@@ -19,4 +19,6 @@ Rules:
 - Keep every step number you were given; do not add, drop or reorder steps.
 - Commands are not yours to change. Only titles and text.
 - "risk" lists only steps you think are MORE dangerous than their given label.
+- Decisions are already preconditions. Do not restate or rephrase them in
+  "preconditions"; add only new checks that are not covered by a decision.
 - Be concrete and brief. No marketing language.

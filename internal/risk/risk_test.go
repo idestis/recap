@@ -35,3 +35,23 @@ func TestClassify(t *testing.T) {
 		}
 	}
 }
+
+func TestContextSwitch(t *testing.T) {
+	cases := []struct {
+		cmd, want string
+		ok        bool
+	}{
+		{"kubectx prod-eu", "prod-eu", true},
+		{"kubectx -", "", false},
+		{"kubectx", "", false},
+		{"kubectl config use-context arn:aws:eks:eu-west-1:1:cluster/prod", "arn:aws:eks:eu-west-1:1:cluster/prod", true},
+		{"kubectl get pods --context prod-eu", "", false},
+		{"kubens payments", "", false},
+	}
+	for _, c := range cases {
+		got, ok := ContextSwitch(c.cmd)
+		if got != c.want || ok != c.ok {
+			t.Errorf("%q: got %q %v, want %q %v", c.cmd, got, ok, c.want, c.ok)
+		}
+	}
+}

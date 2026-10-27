@@ -7,3 +7,4 @@ desktop/RecapTray/.build/
 # Design notes stay local until they move to GitHub Project items.
 docs/SPEC.md
 docs/WORKFLOWS.md
+node_modules/

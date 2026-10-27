@@ -37,6 +37,7 @@ fi
 "$RECAP" start "checkout API returning 502s" --space mine
 H="$("$RECAP" _active)"
 hook() { "$RECAP" _hook cmd --session "$H" --exit "$1" --dir "$TMP" --tty ttys001 -- "$2"; }
+hook 0 "kubectx prod-eu"
 hook 0 "kubectl get pods -n checkout"
 hook 1 "kubectl logs deploy/checkout-api -n checkout --previous --tokn"
 hook 0 "kubectl describe pod checkout-api-7d9f-abcde -n checkout"

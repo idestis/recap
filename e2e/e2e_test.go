@@ -190,6 +190,8 @@ func TestKubernetesOOMRecipe(t *testing.T) {
 	w := newWorld(t, "prod-eu")
 	h := w.start("payments api pods OOMKilled after deploy")
 
+	// The context comes from what was recorded, never from the kubeconfig.
+	w.cmd(h, 0, "kubectx prod-eu")
 	w.cmd(h, 0, "kubectl get pods -n payments")
 	w.cmd(h, 0, "ls -la")
 	w.cmd(h, 0, "kubectl describe pod payments-api-7d9f8-x2k4p -n payments")
@@ -212,8 +214,8 @@ func TestKubernetesOOMRecipe(t *testing.T) {
 	if r.Masked == 0 {
 		t.Error("the pasted token should be masked")
 	}
-	if r.Recipe.Steps != 5 {
-		t.Errorf("want 5 steps (noise and failed command dropped), got %d", r.Recipe.Steps)
+	if r.Recipe.Steps != 6 {
+		t.Errorf("want 6 steps (noise and failed command dropped), got %d", r.Recipe.Steps)
 	}
 	if r.Recipe.Risk != "risky-prod" {
 		t.Errorf("risk %q, want risky-prod (model may not lower it)", r.Recipe.Risk)
@@ -230,13 +232,17 @@ func TestKubernetesOOMRecipe(t *testing.T) {
 	if !strings.HasPrefix(recipe, "---\nid: ") || frontMatter(recipe, "title") == "" {
 		t.Fatalf("front matter missing:\n%s", recipe)
 	}
-	for _, v := range []string{"namespace", "deployment", "pod"} {
+	for _, v := range []string{"context", "namespace", "deployment", "pod"} {
 		if !strings.Contains(frontMatter(recipe, "vars"), v) {
 			t.Errorf("vars %q should include %s", frontMatter(recipe, "vars"), v)
 		}
 	}
 	// Steps keep the order they were run in; the model only rewords them.
+	if !strings.Contains(recipe, "verified: [prod-eu ") {
+		t.Error("verified should name the recorded context")
+	}
 	assertOrder(t, recipe,
+		"kubectx {context}",
 		"kubectl get pods -n {namespace}",
 		"kubectl describe pod {pod} -n {namespace}",
 		"kubectl top pod -n {namespace}",
@@ -246,7 +252,7 @@ func TestKubernetesOOMRecipe(t *testing.T) {
 	if !strings.Contains(strings.ToLower(recipe), "roll") {
 		t.Error("the 'do not roll back' decision should become a precondition")
 	}
-	if strings.Count(recipe, "```sh") != 5 {
+	if strings.Count(recipe, "```sh") != 6 {
 		t.Error("each step should have its own sh block")
 	}
 
@@ -264,13 +270,14 @@ func TestKubernetesOOMRecipe(t *testing.T) {
 	if err == nil || !strings.Contains(out, "missing values") {
 		t.Fatalf("run without vars should list missing values:\n%s", out)
 	}
-	for _, v := range []string{"namespace", "pod", "deployment"} {
+	for _, v := range []string{"context", "namespace", "pod", "deployment"} {
 		if !strings.Contains(out, v) {
 			t.Errorf("missing-values message should name %s:\n%s", v, out)
 		}
 	}
-	out = w.ok(w.repo, "run", id, "--var", "namespace=billing", "--var", "pod=billing-api-1", "--var", "deployment=billing-api")
+	out = w.ok(w.repo, "run", id, "--var", "context=prod-us", "--var", "namespace=billing", "--var", "pod=billing-api-1", "--var", "deployment=billing-api")
 	assertOrder(t, out,
+		"kubectx prod-us",
 		"kubectl get pods -n billing",
 		"kubectl describe pod billing-api-1 -n billing",
 		"kubectl top pod -n billing",
@@ -279,8 +286,15 @@ func TestKubernetesOOMRecipe(t *testing.T) {
 		"kubectl rollout status deploy/billing-api -n billing",
 	)
 
+	// The recipe becomes a Claude Code skill that runs through recap.
+	skill := w.ok(w.repo, "skill", id, "--dry-run")
+	if !strings.Contains(skill, "name: "+id+"\n") || !strings.Contains(skill, "recap run "+id+" --var") {
+		t.Fatalf("skill should name the recipe and run it through recap:\n%s", skill)
+	}
+
 	// A second, similar incident becomes a variant of the same recipe.
 	h2 := w.start("checkout api pods OOMKilled")
+	w.cmd(h2, 0, "kubectx prod-eu")
 	w.cmd(h2, 0, "kubectl get pods -n checkout")
 	w.cmd(h2, 0, "kubectl set resources deploy/checkout-api -n checkout --limits=memory=2Gi")
 	w.cmd(h2, 0, "kubectl rollout restart deploy/checkout-api -n checkout")
@@ -313,6 +327,9 @@ func TestDockerLocalDBReset(t *testing.T) {
 	w.ctx("data is disposable; seed runs automatically on start")
 
 	r := w.stop()
+	if !strings.Contains(r.DraftPath, "local-postgres") {
+		t.Errorf("unexpected session folder %s", r.DraftPath)
+	}
 	if r.Recipe.Risk != "destructive" {
 		t.Errorf("risk %q, want destructive", r.Recipe.Risk)
 	}

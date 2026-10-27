@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fde7da" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1219" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="recap">
+<meta property="og:image" content="https://idestis.github.io/recap/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://idestis.github.io/recap/og.png">
+<script>(function(){var t;try{t=localStorage.getItem("recap-theme")}catch(e){}if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t})()</script>
+<title>recap docs: install, sessions, recipes and Claude Code</title>
+<meta name="description" content="How to install recap, record a session, turn it into a recipe, run it again with new values, and hand it to Claude Code as a skill.">
+<link rel="canonical" href="https://idestis.github.io/recap/docs/">
+<meta property="og:title" content="recap docs">
+<meta property="og:description" content="Install, sessions, recipes, run and Claude Code skills.">
+<meta property="og:url" content="https://idestis.github.io/recap/docs/">
+<meta name="twitter:title" content="recap docs">
+<meta name="twitter:description" content="Install, sessions, recipes, run and Claude Code skills.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"recap","description":"Local-first CLI and macOS menu bar app that records manual work and turns it into reviewed recipes you can run again or hand to Claude Code as a skill.","operatingSystem":"macOS","applicationCategory":"DeveloperApplication","license":"https://www.apache.org/licenses/LICENSE-2.0","url":"https://idestis.github.io/recap/docs/","codeRepository":"https://github.com/idestis/recap"}</script>
+<link rel="stylesheet" href="/src/main.css">
+<script type="speculationrules">{"prefetch":[{"where":{"href_matches":"/recap/*"},"eagerness":"moderate"}]}</script>
+<script type="module" src="/src/main.js"></script>
+</head>
+<body>
+<svg width="0" height="0" class="absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-loop" viewBox="0 0 96 96"><path d="M48 20A28 28 0 1 1 20 48" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><polyline points="13 51 20 42 27 51" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="48" cy="48" r="11" fill="currentColor"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></symbol>
+</svg>
+<div class="page">
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:font-bold focus:text-navy">Skip to content</a>
+<header class="sticky top-0 z-40 border-b border-navy/5 bg-white/85 backdrop-blur-md dark:border-white/10 dark:bg-night-2/85">
+  <div class="gutter flex h-16 items-center justify-between gap-3">
+    <a href="../" class="flex min-h-11 items-center gap-2.5 text-xl font-extrabold tracking-tight no-underline" aria-label="recap home">
+      <img src="/logo.svg" alt="" width="32" height="32" class="size-8">recap
+    </a>
+    <nav aria-label="Main" data-nav class="absolute inset-x-0 top-full flex flex-col gap-1 border-b border-navy/10 bg-white p-3 text-sm font-semibold max-md:hidden md:static md:flex-row md:items-center md:gap-1 md:border-0 md:bg-transparent md:p-0 dark:border-white/10 dark:bg-night-2 md:dark:bg-transparent">
+      <a class="flex min-h-11 items-center rounded-lg px-3 no-underline hover:bg-navy/5 dark:hover:bg-white/10" href="../#capture">How it works</a>
+      <a class="flex min-h-11 items-center rounded-lg px-3 no-underline hover:bg-navy/5 dark:hover:bg-white/10" href="./">Docs</a>
+      <a class="flex min-h-11 items-center rounded-lg px-3 no-underline hover:bg-navy/5 dark:hover:bg-white/10" href="../#privacy">Privacy</a>
+      <a class="flex min-h-11 items-center rounded-lg px-3 no-underline hover:bg-navy/5 dark:hover:bg-white/10" href="https://github.com/idestis/recap">GitHub</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <button type="button" data-theme-toggle aria-label="Toggle light and dark theme" class="grid size-11 place-items-center rounded-xl hover:bg-navy/5 dark:hover:bg-white/10">
+        <svg class="size-5 dark:hidden" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="hidden size-5 dark:block" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
+      <a class="btn btn-primary hidden lg:inline-flex" href="https://github.com/idestis/recap">View on GitHub</a>
+      <button type="button" data-nav-toggle aria-expanded="false" aria-label="Menu" class="grid size-11 place-items-center rounded-xl hover:bg-navy/5 md:hidden dark:hover:bg-white/10">
+        <svg class="size-6" aria-hidden="true"><use href="#i-menu"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<div class="gutter py-8 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-12 lg:py-12">
+
+  <details data-toc-details class="mb-6 rounded-xl border border-navy/15 bg-peach-soft lg:hidden dark:border-white/15 dark:bg-night-3">
+    <summary class="flex min-h-11 items-center px-4 text-sm font-bold">On this page</summary>
+    <nav aria-label="On this page" data-toc class="px-2 pb-2"><a href="#install" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Install</a><a href="#shell" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Shell setup</a><a href="#spaces" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Spaces</a><a href="#sessions" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Sessions</a><a href="#stop" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Stop and review</a><a href="#publishing" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Publishing</a><a href="#apply" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Apply</a><a href="#run" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Find and run</a><a href="#models" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Models</a><a href="#claude" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Claude Code</a><a href="#app" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Menu bar app</a><a href="#agents" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Agents and scripts</a><a href="#privacy" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Privacy</a><a href="#reference" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Command reference</a></nav>
+  </details>
+  <aside class="hidden lg:block">
+    <nav aria-label="On this page" data-toc class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
+      <p class="mb-2 px-3 text-[0.7rem] font-bold uppercase tracking-[0.18em] sub">On this page</p>
+      <a href="#install" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Install</a><a href="#shell" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Shell setup</a><a href="#spaces" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Spaces</a><a href="#sessions" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Sessions</a><a href="#stop" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Stop and review</a><a href="#publishing" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Publishing</a><a href="#apply" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Apply</a><a href="#run" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Find and run</a><a href="#models" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Models</a><a href="#claude" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Claude Code</a><a href="#app" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Menu bar app</a><a href="#agents" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Agents and scripts</a><a href="#privacy" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Privacy</a><a href="#reference" class="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold no-underline hover:bg-navy/5 aria-[current=true]:bg-coral/15 aria-[current=true]:text-coral-deep dark:hover:bg-white/10 dark:aria-[current=true]:text-amber">Command reference</a>
+    </nav>
+  </aside>
+
+  <main id="main" class="doc min-w-0 max-w-3xl">
+    <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl">recap <span class="grad-text">docs</span></h1>
+    <p class="mt-4 text-lg leading-8 sub">recap records the work you do by hand, then turns the parts you keep into a recipe. Run the recipe again with new values, or hand it to Claude Code as a skill.</p>
+
+    <h2 id="install">Install</h2>
+    <p>recap needs macOS 14 or later. It is early development software, so you build it from source for now.</p>
+<pre class="code">git clone https://github.com/idestis/recap &amp;&amp; cd recap &amp;&amp; task pkg
+# then open dist/Recap-*.pkg</pre>
+    <p>The package installs the menu bar app and the <code>recap</code> command line tool. If you only want the CLI, build it with <code>task build</code>.</p>
+
+    <h2 id="shell">Shell setup</h2>
+    <p>The shell hook is what lets recap see the commands you type and lets new tabs join a running session. Install it once:</p>
+<pre class="code"><span class="t-p">$</span> recap shell-init --install
+<span class="t-ok">✓</span> Added to ~/.zshrc eval "$(recap shell-init zsh)"
+  <span class="t-dim">Open a new tab or run exec zsh to load it.</span></pre>
+    <p>Check it with <code>recap shell-init --status</code>. Without it, <code>recap start</code> asks you to set it up first. To start anyway and capture notes and links only, use <code>recap start --no-shell</code>.</p>
+
+    <h2 id="spaces">Spaces</h2>
+    <p>A space is a recipe repo. Run <code>recap init</code> inside a folder to make that folder a space:</p>
+<pre class="code"><span class="t-p">$</span> cd ~/runbooks &amp;&amp; recap init
+<span class="t-ok">✓</span> Space runbooks → ~/runbooks
+  publish: none · config: ~/recap/config.yaml</pre>
+    <p>To set everything up in one command:</p>
+<pre class="code">recap init --name team --remote git@github.com:acme/runbooks.git --publish pr --path ~/code/acme</pre>
+    <p>List spaces with <code>recap spaces</code> and switch with <code>recap spaces use</code>. recap picks a space in this order, first match wins:</p>
+    <ol><li><code>--space</code> flag</li><li><code>RECAP_SPACE</code> environment variable</li><li>the folder you are in</li><li>the default space</li></ol>
+
+    <h2 id="sessions">Sessions</h2>
+    <p>Start a session from the terminal, or press <code>⌥⇧Space</code> in any app to open the overlay. Starting is instant and works offline.</p>
+<pre class="code"><span class="t-p">$</span> recap start checkout API returning 502s
+<span class="t-rec">●</span> <span class="t-b">Recording</span>  2026-10-27.1  checkout-api-returning-502s
+  <span class="t-dim">space runbooks
+  New tab? run: recap join   ·   add context: recap ctx "…"</span></pre>
+    <ul>
+      <li><code>recap join</code> attaches another tab to the active session; <code>recap leave</code> detaches it while recording continues elsewhere.</li>
+      <li><code>recap ctx</code> adds anything you believe is context: a note, a link, a file, or text piped on stdin.</li>
+      <li><code>recap status</code> shows the active session, attached tabs and sources.</li>
+      <li><code>recap timeline</code> shows everything captured, merged by time, with secrets masked.</li>
+    </ul>
+<pre class="code"><span class="t-p">$</span> recap ctx "rollback ruled out, migration 0142 already ran https://grafana.example.com/d/checkout"
+<span class="t-ok">✓</span> Note added · decision
+<span class="t-ok">✓</span> Dashboard linked https://grafana.example.com/d/checkout
+
+<span class="t-p">$</span> recap timeline
+  13:14  Terminal  kubectx prod-eu
+  13:14  Terminal  kubectl get pods -n checkout
+  13:14  Terminal  kubectl logs checkout-api-7d9f8-x2k4p -n checkout --previus  exit 1
+  13:14  Terminal  kubectl set resources deploy/checkout-api -n checkout --limits=memory=1Gi  risky · prod
+  13:14  Note      rollback ruled out, migration 0142 already ran  decision
+  13:14  Dashboard https://grafana.example.com/d/checkout</pre>
+
+    <p class="note"><strong>No guessing.</strong> recap never guesses where you are: a step's Kubernetes context is the last <code>kubectx</code> / <code>kubectl config use-context</code> you ran in the session, or <code>--context</code> on the command, and it becomes a <code>{context}</code> variable. Only the Claude Code guard reads the live kubeconfig, because it checks the command about to run.</p>
+
+    <h2 id="stop">Stop and review</h2>
+    <p>In a terminal, <code>recap stop</code> shows a checklist titled <strong>Keep for the recipe</strong>. Failed commands start unticked. Then it asks <em>Did this fix it?</em> and, if the space publishes by pull request, whether to open one.</p>
+    <p>Everything the prompts ask can be answered with flags, so scripts and agents never block:</p>
+    <table>
+      <thead><tr><th>Flag</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td><code>--fixed</code> / <code>--not-fixed</code></td><td>Answer the fixed question.</td></tr>
+        <tr><td><code>--publish</code></td><td>Publish after drafting.</td></tr>
+        <tr><td><code>--json</code></td><td>Machine-readable output.</td></tr>
+        <tr><td><code>--no-model</code></td><td>Draft from templates; no model call.</td></tr>
+      </tbody>
+    </table>
+<pre class="code"><span class="t-p">$</span> recap stop --fixed
+  Related    5 commands · 1 notes · 1 links/files
+  <span class="t-dim">Excluded   1 failed commands</span>
+<span class="t-ok">✓</span> Draft: "Fix Checkout API 502s" · risky-prod · 6 steps
+<span class="t-ok">✓</span> Wrote sessions/2026-10-27.1-checkout-api-returning-502s/ in runbooks
+  Review delta.md, then: recap apply 2026-10-27.1</pre>
+
+    <h2 id="publishing">Publishing</h2>
+    <p><code>recap publish</code> commits a session's recipe files according to the space: <code>pr</code> opens a pull request, <code>push</code> pushes, <code>none</code> leaves the files for you. Your checkout is never switched; pull request commits are made from a temporary worktree.</p>
+<pre class="code"><span class="t-ok">✓</span> Pull request https://github.com/acme/runbooks/pull/42</pre>
+
+    <h2 id="apply">Apply</h2>
+    <p>A stop writes a session folder with a draft and a <code>delta.md</code>. Review it, then merge it into your recipes:</p>
+<pre class="code"><span class="t-p">$</span> recap apply checkout-api-returning-502s
+<span class="t-ok">✓</span> Added recipes/fix-checkout-api-502s.md
+<span class="t-ok">✓</span> Removed session folder (still in Git history)
+  Commit when ready: git -C ~/runbooks add -A &amp;&amp; git commit</pre>
+    <p><code>recap apply</code> takes the handle (<code>2026-10-27.1</code>) or the name. Use <code>--keep</code> to keep the session folder and <code>--publish</code> to publish right after.</p>
+
+    <h2 id="run">Find and run</h2>
+    <p>Search recipes by meaning, with trust and risk shown:</p>
+<pre class="code"><span class="t-p">$</span> recap find pods out of memory
+  fix-checkout-api-502s Fix Checkout API 502s              1/1 ok                 risky-prod</pre>
+    <p><code>recap run</code> takes a recipe name or a symptom. It prints the preflight, then asks for each missing value. Pass values yourself with <code>--var name=value</code>. Preview is the default; add <code>--execute</code> to run. Risky steps ask before they run.</p>
+<pre class="code"><span class="t-p">$</span> recap run fix-checkout-api-502s --var context=prod-us --var namespace=payments --var pod=payments-api-1 --var deployment=payments-api
+<span class="t-b">Preflight</span>  fix-checkout-api-502s
+  1  Switch kube context           <span class="t-ok">safe</span>
+     <span class="t-dim">kubectx prod-us</span>
+  2  List pods in namespace           <span class="t-ok">safe</span>
+     <span class="t-dim">kubectl get pods -n payments</span>
+  5  Adjust deployment resource limits <span class="t-err">risky · prod</span>
+     <span class="t-dim">kubectl set resources deploy/payments-api -n payments --limits=memory=1Gi
+     undo kubectl rollout undo deploy/payments-api -n payments</span>
+
+  Preflight only. Add --execute to run (prototype safety default).</pre>
+
+    <h2 id="models">Models</h2>
+    <p>A model rewords the draft; it never edits a command or lowers a risk label. Use Ollama locally, or any OpenAI-compatible API.</p>
+<pre class="code">recap models set --provider ollama --model llama3.1:8b
+recap models set --provider openai --model &lt;model&gt; --base-url &lt;url&gt;
+recap models key set
+recap models test
+<span class="t-ok">✓</span> llama3.1:8b answered in 7.547s</pre>
+    <p>The API key goes into the macOS Keychain. Add <code>--for-space</code> to set a model for one space only.</p>
+
+    <h2 id="claude">Claude Code</h2>
+    <p>Install the hooks once:</p>
+<pre class="code">recap hooks install</pre>
+    <ul>
+      <li><strong>PostToolUse</strong> captures the commands Claude Code runs into the session timeline.</li>
+      <li><strong>PreToolUse</strong> blocks destructive prod commands when a verified recipe exists, so the agent uses the recipe instead.</li>
+    </ul>
+    <p>Turn a recipe into a skill with <code>recap skill</code>. It writes <code>./.claude/skills/&lt;id&gt;/SKILL.md</code>, or <code>~/.claude/skills/&lt;id&gt;/SKILL.md</code> with <code>--user</code>. <code>--dry-run</code> shows what would be written.</p>
+<pre class="code"><span class="t-p">$</span> recap skill fix-checkout-api-502s
+<span class="t-ok">✓</span> Wrote .claude/skills/fix-checkout-api-502s/SKILL.md
+  <span class="t-dim">Claude Code can now use it; it runs steps through recap run, so risk gates still apply.</span></pre>
+
+    <h2 id="app">Menu bar app</h2>
+    <ul>
+      <li>A native tray menu shows the recording, the session, how much was captured, and the current space.</li>
+      <li>The overlay (<code>⌥⇧Space</code>) starts a session or adds context, by typing or dictation.</li>
+      <li>Settings: launch at login, the CLI link, and a recordable shortcut.</li>
+    </ul>
+
+    <h2 id="agents">Agents and scripts</h2>
+    <p>Every prompt has a non-interactive path. Global flags work on every command:</p>
+    <ul>
+      <li><code>--json</code> for machine-readable output</li>
+      <li><code>--yes</code> answers yes to prompts</li>
+      <li><code>--dry-run</code> shows what would happen and changes nothing</li>
+    </ul>
+
+    <h2 id="privacy">Privacy</h2>
+    <ul>
+      <li>Secrets are masked locally before any model call or Git write.</li>
+      <li>Raw timelines stay on your Mac. Timelines, screenshots and transcripts never go into Git.</li>
+      <li>API keys live in the Keychain.</li>
+      <li>No telemetry, no hosted service, no audio recording.</li>
+      <li>recap never deletes on its own, and a model can never lower a risk label.</li>
+    </ul>
+
+    <h2 id="reference">Command reference</h2>
+    <table>
+      <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>init</code></td><td>Make this folder (or path) a recipe repo space; show next steps</td></tr>
+        <tr><td><code>spaces</code></td><td>List spaces; add, use, remove</td></tr>
+        <tr><td><code>shell-init</code></td><td>Print shell integration, or <code>--install</code> it into your rc file</td></tr>
+        <tr><td><code>hooks</code></td><td>Manage Claude Code hooks</td></tr>
+        <tr><td><code>models</code></td><td>Model for drafting: Ollama or any OpenAI-compatible API</td></tr>
+        <tr><td><code>start</code></td><td>Start recording; this tab joins automatically</td></tr>
+        <tr><td><code>join</code></td><td>Attach this tab to the active (or named) session</td></tr>
+        <tr><td><code>leave</code></td><td>Detach this tab; recording continues elsewhere</td></tr>
+        <tr><td><code>status</code></td><td>Show the active session, attached tabs and sources</td></tr>
+        <tr><td><code>ctx</code></td><td>Add anything: a note, a link, a file (also reads stdin)</td></tr>
+        <tr><td><code>timeline</code></td><td>Everything captured, merged by time (secrets masked)</td></tr>
+        <tr><td><code>stop</code></td><td>Review, confirm the fix, draft the recipe, check for duplicates</td></tr>
+        <tr><td><code>find</code></td><td>Search recipes by meaning, with trust and risk</td></tr>
+        <tr><td><code>run</code></td><td>Preflight, then run; asks for missing values; risky steps ask first</td></tr>
+        <tr><td><code>apply</code></td><td>Merge a session's delta into recipes</td></tr>
+        <tr><td><code>publish</code></td><td>Commit a session's recipe files per the space (PR, push, or none)</td></tr>
+        <tr><td><code>skill</code></td><td>Write a recipe as a Claude Code skill (<code>--user</code>, <code>--dry-run</code>)</td></tr>
+        <tr><td><code>prune</code></td><td>Remove archived sessions (only when you run it)</td></tr>
+        <tr><td><code>mcp</code></td><td>Start the MCP server for AI agents (MVP)</td></tr>
+        <tr><td><code>version</code></td><td>Print the version</td></tr>
+      </tbody>
+    </table>
+    <p>Global flags: <code>--dry-run</code>, <code>--json</code>, <code>--space</code> (env <code>RECAP_SPACE</code>), <code>--yes</code>, <code>-h</code>, <code>-v</code>.</p>
+  </main>
+</div>
+<footer class="gutter border-t border-navy/10 py-8 text-sm sub dark:border-white/10">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <p>Apache-2.0 · © 2026 recap contributors</p>
+    <nav aria-label="Footer" class="flex flex-wrap gap-x-2 font-semibold">
+      <a class="flex min-h-11 items-center px-2 underline-offset-2 hover:underline" href="https://github.com/idestis/recap">Source</a>
+      <a class="flex min-h-11 items-center px-2 underline-offset-2 hover:underline" href="https://github.com/idestis/recap/releases">Releases</a>
+      <a class="flex min-h-11 items-center px-2 underline-offset-2 hover:underline" href="./">Docs</a>
+    </nav>
+  </div>
+</footer>
+</div>
+</body>
+</html>
