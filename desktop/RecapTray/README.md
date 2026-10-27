@@ -1,35 +1,30 @@
-# RecapTray — macOS menu bar + overlay prototype
+# Recap.app — menu bar app and quick context overlay
 
-SwiftUI app with the recap tray menu and the ⌥⇧Space overlay (SPEC D-21–D-23). It holds no logic: it calls the `recap` CLI.
+SwiftUI menu bar app for recap. It holds no logic: every action calls the bundled `recap` CLI (SPEC D-04), so the terminal and the app always agree.
 
-> Written against macOS 14+ APIs but **not yet compiled**: it was authored without a Mac. Expect a few compiler fixes on first build.
-
-## Run
+## Build and run
 
 ```sh
-task build                      # from repo root: builds bin/recap
-export RECAP_BIN="$PWD/bin/recap"
-cd desktop/RecapTray
-swift build && swift run        # run from this folder (Info.plist is linked by relative path)
+task desktop                     # swift build (debug)
+task app                         # dist/Recap.app with the universal CLI in Contents/Helpers
+task pkg                         # dist/Recap-<version>.pkg (unsigned unless signing env vars are set)
+open dist/Recap.app --args --show-settings   # or --show-overlay, handy while developing
 ```
 
-The loop icon appears in the menu bar. Press **⌥⇧Space** anywhere to open the overlay.
+The loop icon appears in the menu bar. While a session records, a red dot inside it blinks.
 
 ## What's in it
 
-- `App.swift` — app entry, ⌥⇧Space hotkey (Carbon, no Accessibility permission), CLI bridge, status polling (`recap status --json` every 2 s).
-- `Tray.swift` — menu bar icon drawn in code (idle loop as template image; recording adds the red dot), tray menu with sources, Add context, Stop and review.
-- `Overlay.swift` — floating glass panel near the bottom of the screen: text field, attachment chips, "Detected:" line, + button, session chip, mic hint, Sunrise send button; contextual pills below (Screenshot of <App> ⌘⇧S, Area ⌘⇧A, <Browser> tab link ⌘⇧L); drag and drop files.
+- `App.swift` — app entry, native `MenuBarExtra` menu, launch arguments.
+- `Tray.swift` — menu bar icon drawn in code (template loop when idle; loop + blinking red dot while recording), native tray menu: session status, Add Context…, Stop and Review…, Space picker, Settings…, Quit. Stop asks "Did this fix it?", runs `recap stop`, then offers Show in Finder and Publish.
+- `Overlay.swift` — the quick context bar (default ⌥⇧Space): glass input that takes focus immediately so macOS Dictation and Wispr Flow can type into it, mic button, attach (+) and drag-and-drop, session pill above the bar, contextual pills below (Screenshot of <App> ⌘⇧S, Area ⌘⇧A, <Browser> tab link ⌘⇧L). With no session running, the text starts one (`recap start`).
+- `Settings.swift` — glass settings panel: Launch at login, command line tool link, recordable shortcut, spaces, model.
+- `HotKey.swift` — global shortcut via Carbon (no Accessibility permission), stored in UserDefaults.
+- `Glass.swift` — Liquid Glass on macOS 26, material fallback on 14–15.
+- `CLI.swift` — finds the CLI (bundled `Contents/Helpers/recap`, then `RECAP_BIN`, then PATH) and polls `recap status --json`.
 
 ## Permissions you'll see
 
 - **Screen Recording** — first time you use Screenshot or Area.
 - **Automation** — first time you use Tab link in each browser (Safari, Chrome, Arc, Brave, Edge).
-
-## Next steps for the MVP
-
-- Move to an Xcode project or app bundle with an asset catalog (Sunrise icon from `/icons`), signing and notarization.
-- Talk to the `recapd` socket instead of spawning the CLI.
-- Stop review window (related / maybe / excluded).
-- On macOS 26, replace `.ultraThinMaterial` with Liquid Glass.
-- Icon motion: blink on start, one turn on capture, spin while drafting.
+- **Administrator password** — only if you choose "Install command line tool" in Settings.

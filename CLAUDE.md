@@ -4,7 +4,7 @@ Guidance for Claude Code and other agents working in this repo. Decisions are re
 
 ## Current state
 
-- **CLI (Go): works end to end.** Sessions with CalVer handles and ULIDs, zsh/bash join/leave, `ctx` type detection, timeline, stop with interactive review (huh) or flags, redaction, risk rules, template drafting + optional model drafting (Ollama / OpenAI-compatible, `internal/llm`, `internal/draft`), dedup into variants, **spaces** (many recipe repos, chosen by path; `internal/config`), **publishing** per space (`pr` / `push` / `none`; `internal/publish`), apply/keep/prune, find, run with preflight, Claude Code hooks.
+- **CLI (Go): works end to end.** Context (e.g. Kubernetes) comes only from recorded commands (`kubectx`, `kubectl config use-context`, `--context`); sessions never read live state. Only the Claude Code PreToolUse guard reads the live kubeconfig, because it judges the command about to run. Sessions with CalVer handles and ULIDs, zsh/bash join/leave, `ctx` type detection, timeline, stop with interactive review (huh) or flags, redaction, risk rules, template drafting + optional model drafting (Ollama / OpenAI-compatible, `internal/llm`, `internal/draft`), dedup into variants, **spaces** (many recipe repos, chosen by path; `internal/config`), **publishing** per space (`pr` / `push` / `none`; `internal/publish`), apply/keep/prune, find, run with preflight (by name or symptom, asks for vars), Claude Code hooks and `recap skill` (recipe → Claude Code skill).
 - **Desktop (SwiftUI):** builds universal. Tray (status, space picker, launch at login, install CLI, stop → publish) + ⌥⇧Space overlay for quick context with dictation. Calls the bundled CLI.
 - **Packaging:** `task pkg` → `dist/Recap-<version>.pkg` (Recap.app + universal CLI, postinstall links `/usr/local/bin/recap`). Unsigned unless signing env vars are set.
 - **Stubs:** `recap mcp`, `slack|wispr|github login`.
@@ -18,10 +18,12 @@ task desktop        # swift build (debug)
 task pkg            # universal CLI + Recap.app + .pkg in dist/
 task test:e2e       # e2e: real binary + Ollama drafts, apply by name, run with vars (RECAP_E2E_MODEL=llama3.1:8b)
 task ollama:smoke   # quick scripted smoke run incl. publish by push (MODEL=llama3.1:8b)
+task landing:dev    # website (Vite + Tailwind) at http://localhost:5173/recap/
+task landing:check  # build the site and fail on any third-party request
 ```
 
 Use throwaway dirs when testing by hand (see `scripts/smoke.sh`):
-`RECAP_HOME=/tmp/recap-home RECAP_REPO=/tmp/runbooks KUBECONFIG=/tmp/kube/config recap …`
+`RECAP_HOME=/tmp/recap-home RECAP_REPO=/tmp/runbooks recap …`
 Git tests set `GIT_CONFIG_GLOBAL` to an empty file so user signing config doesn't interfere.
 
 ## Stack
@@ -48,7 +50,7 @@ Git tests set `GIT_CONFIG_GLOBAL` to an empty file so user signing config doesn'
 6. Secrets live in the Keychain, never in config, logs or the store (D-15).
 7. ULID and handle never change; names and links can (D-07, D-08).
 8. Store external IDs (Slack channel `C…`), not names (D-08).
-9. `recap start` is instant and offline (D-05).
+9. `recap start` is instant and offline, and records rather than guesses: no live kubeconfig/cloud state is read for a session (D-05).
 10. Every prompt has a non-interactive path: `--yes`, `--json`, `--dry-run`.
 11. Pull, don't record: recap never captures audio (D-20).
 12. Hooks must never break the user's shell or Claude Code: on internal errors, exit 0 silently (except the deliberate exit 2 block).
