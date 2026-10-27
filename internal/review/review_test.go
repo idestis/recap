@@ -32,6 +32,7 @@ func TestClassify(t *testing.T) {
 		{"context flag", []session.Event{cmd(0, "kubectl get pods", 0), cmd(1, "kubectl get pods", 0), cmd(2, "kubectl get pods --context dev", 0)}, []string{"prod", "prod", "prod"}, []Bucket{Related, Related, Maybe}},
 		{"isolated", []session.Event{cmd(0, "kubectl get pods", 0), cmd(1, "kubectl get svc", 0), cmd(120, "kubectl get nodes", 0)}, nil, []Bucket{Related, Related, Maybe}},
 		{"notes always related", []session.Event{{Time: t0, Kind: "note", Text: "hi"}, {Time: t0.Add(5 * time.Hour), Kind: "link", Text: "x"}}, nil, []Bucket{Related, Related}},
+		{"transcript intent is maybe", []session.Event{cmd(0, "kubectl get pods", 0), {Time: t0, Kind: "intent", Text: "checkout pods look stuck", Tags: []string{"step"}}}, nil, []Bucket{Related, Maybe}},
 		{"single event related", []session.Event{cmd(0, "kubectl get pods", 0)}, nil, []Bucket{Related}},
 	}
 	for _, tt := range tests {
@@ -72,6 +73,15 @@ func TestSortMaybe(t *testing.T) {
 	got, err = SortMaybe(context.Background(), fake{err: errors.New("down")}, se, evs, items)
 	if err == nil || got[0].Bucket != Maybe {
 		t.Fatalf("fallback: %v %+v", err, got)
+	}
+}
+
+func TestSortMaybeNeverPromotesIntent(t *testing.T) {
+	se := &session.Session{}
+	evs := []session.Event{{Time: t0, Kind: "intent", Text: "why"}}
+	got, err := SortMaybe(context.Background(), fake{keep: []int{0}}, se, evs, Classify(se, evs, nil))
+	if err != nil || got[0].Bucket != Maybe {
+		t.Fatalf("intent promoted: %v %+v", err, got)
 	}
 }
 

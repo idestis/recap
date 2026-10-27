@@ -71,6 +71,9 @@ func Classify(se *session.Session, evs []session.Event, ctxs []string) []Item {
 		switch {
 		case e.Kind == "cmd" && failed(e):
 			it.Bucket, it.Reason = Excluded, "failed command"
+		case e.Kind == "intent":
+			// Transcript text reaches Git only when a person ticks it (SPEC D-10, D-16).
+			it.Bucket, it.Reason = Maybe, "Claude Code transcript"
 		case e.Kind != "cmd":
 			it.Reason = "note, link or file"
 		case mentions(e.Text, desc):
@@ -130,7 +133,7 @@ const sorterPrompt = `You sort terminal commands from an incident session. Given
 func SortMaybe(ctx context.Context, c JSONer, se *session.Session, evs []session.Event, items []Item) ([]Item, error) {
 	var lines []string
 	for _, it := range items {
-		if it.Bucket == Maybe {
+		if it.Bucket == Maybe && evs[it.Index].Kind == "cmd" {
 			lines = append(lines, fmt.Sprintf("%d: %s", it.Index, redact.Redact(evs[it.Index].Text).Text))
 		}
 	}
@@ -146,7 +149,7 @@ func SortMaybe(ctx context.Context, c JSONer, se *session.Session, evs []session
 	}
 	out := append([]Item(nil), items...)
 	for _, k := range res.Keep {
-		if k >= 0 && k < len(out) && out[k].Bucket == Maybe {
+		if k >= 0 && k < len(out) && out[k].Bucket == Maybe && evs[k].Kind == "cmd" {
 			out[k].Bucket, out[k].Reason = Related, "kept by the model"
 		}
 	}
