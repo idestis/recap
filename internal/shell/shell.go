@@ -12,6 +12,9 @@ import (
 //go:embed zsh.sh
 var zsh string
 
+//go:embed fish.fish
+var fish string
+
 //go:embed bash.sh
 var bash string
 
@@ -23,16 +26,24 @@ func Script(name string) (string, error) {
 	case "bash":
 		return bash, nil
 	case "fish":
-		return "", fmt.Errorf("fish support is planned for the MVP (SPEC D-06)")
+		return fish, nil
 	}
-	return "", fmt.Errorf("unknown shell %q (zsh, bash)", name)
+	return "", fmt.Errorf("unknown shell %q (zsh, bash, fish)", name)
 }
 
 // Line is what goes into the rc file.
-func Line(name string) string { return `eval "$(recap shell-init ` + name + `)"` }
+func Line(name string) string {
+	if name == "fish" {
+		return "recap shell-init fish | source"
+	}
+	return `eval "$(recap shell-init ` + name + `)"`
+}
 
-// Detect returns the user's login shell from $SHELL (zsh or bash), default zsh.
+// Detect returns the user's login shell from $SHELL (zsh, bash or fish), default zsh.
 func Detect() string {
+	if strings.HasSuffix(os.Getenv("SHELL"), "fish") {
+		return "fish"
+	}
 	if strings.HasSuffix(os.Getenv("SHELL"), "bash") {
 		return "bash"
 	}
@@ -44,6 +55,12 @@ func RCPath(name string) string {
 	home, _ := os.UserHomeDir()
 	if name == "bash" {
 		return filepath.Join(home, ".bashrc")
+	}
+	if name == "fish" {
+		if x := os.Getenv("XDG_CONFIG_HOME"); x != "" {
+			return filepath.Join(x, "fish", "config.fish")
+		}
+		return filepath.Join(home, ".config", "fish", "config.fish")
 	}
 	if z := os.Getenv("ZDOTDIR"); z != "" {
 		return filepath.Join(z, ".zshrc")
@@ -66,6 +83,9 @@ func Install(name string) (path string, added bool, err error) {
 	path = RCPath(name)
 	if Installed(name) {
 		return path, false, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return path, false, err
 	}
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {

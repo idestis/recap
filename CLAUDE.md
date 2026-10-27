@@ -68,7 +68,7 @@ Git tests set `GIT_CONFIG_GLOBAL` to an empty file so user signing config doesn'
 
 1. Click-test the tray app (hotkey, overlay, dictation, stop → publish); signing + notarization with a Developer ID.
 2. Golden-file tests for `internal/recipe` (draft, render, MODIFIED merge, identical-steps case).
-3. fish integration.
+3. ~~fish integration~~ (done).
 4. "maybe" bucket in the stop review (relevance scoring, model sorts the rest).
 5. Embedding dedup (Ollama embeddings).
 6. Tray "add context" for any active session from the space picker.

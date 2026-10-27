@@ -21,10 +21,10 @@ func shellInitCmd() *cobra.Command {
 function so start/join can attach the tab (SPEC D-06).
 
   eval "$(recap shell-init zsh)"     # what your ~/.zshrc runs
-  recap shell-init --install         # add that line to ~/.zshrc or ~/.bashrc once
+  recap shell-init --install         # add that line to ~/.zshrc, ~/.bashrc or fish config once
   recap shell-init --status --json   # is it installed / loaded here?`,
 		Args:      cobra.MaximumNArgs(1),
-		ValidArgs: []string{"zsh", "bash"},
+		ValidArgs: []string{"zsh", "bash", "fish"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := shell.Detect()
 			if len(args) == 1 {
@@ -63,7 +63,7 @@ function so start/join can attach the tab (SPEC D-06).
 				return nil
 			}
 			if len(args) == 0 {
-				return errors.New("which shell? recap shell-init zsh|bash (or --install)")
+				return errors.New("which shell? recap shell-init zsh|bash|fish (or --install)")
 			}
 			s, err := shell.Script(name)
 			if err != nil {

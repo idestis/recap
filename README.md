@@ -18,13 +18,13 @@ Start a session either way: `recap start "…"` in a terminal, or press ⌥⇧Sp
 
 **macOS app + CLI:** `task pkg && task pkg:install` (or double-click `dist/Recap-<version>.pkg`). Installs `/Applications/Recap.app` (menu bar + ⌥⇧Space overlay) and links `/usr/local/bin/recap`.
 
-**CLI only:** `task build` → `bin/recap` (Go 1.26+, macOS or Linux, zsh or bash). Requires [Task](https://taskfile.dev).
+**CLI only:** `task build` → `bin/recap` (Go 1.26+, macOS or Linux, zsh, bash or fish). Requires [Task](https://taskfile.dev).
 
 ```sh
 cd ~/runbooks && recap init                          # this folder becomes a space (like git init)
 recap init --name team --remote git@github.com:acme/runbooks.git \
            --publish pr --path ~/code/acme           # clones into ./runbooks; PRs; picked when you work in ~/code/acme
-eval "$(recap shell-init zsh)"                       # or bash; add to your shell rc
+eval "$(recap shell-init zsh)"                       # or bash; fish: recap shell-init fish | source
 recap models set --provider ollama --model llama3.1:8b   # optional: local model drafting
 recap hooks install                                  # optional: Claude Code capture + guardrail
 ```
@@ -118,7 +118,7 @@ internal/ctxdetect/   one-input type detection
 internal/redact/      secret masking
 internal/risk/        risk rules
 internal/recipe/      draft, dedup, session folders, apply, find, prune
-internal/shell/       zsh/bash integration scripts
+internal/shell/       zsh/bash/fish integration scripts
 desktop/RecapTray/    SwiftUI menu bar + overlay
 packaging/macos/      Recap.app + .pkg build scripts
 scripts/smoke.sh      end-to-end test with a local model
