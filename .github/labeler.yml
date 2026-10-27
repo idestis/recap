@@ -1,0 +1,21 @@
+cli:
+  - changed-files:
+      - any-glob-to-any-file: ["cmd/**", "internal/**", "go.mod", "go.sum"]
+app:
+  - changed-files:
+      - any-glob-to-any-file: ["desktop/**", "icons/**"]
+packaging:
+  - changed-files:
+      - any-glob-to-any-file: ["packaging/**"]
+landing:
+  - changed-files:
+      - any-glob-to-any-file: ["landing/**"]
+test:
+  - changed-files:
+      - any-glob-to-any-file: ["e2e/**", "**/*_test.go", "scripts/smoke.sh"]
+ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/workflows/**", ".github/*.yml", "Taskfile.yml", "landing/Taskfile.yml"]
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.md", "LICENSE"]

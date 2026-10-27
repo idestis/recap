@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Decide which parts changed. The cli, app and landing jobs are required
+  # checks; when a part didn't change its job is skipped, which counts as passing.
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      cli: ${{ steps.diff.outputs.cli }}
+      app: ${{ steps.diff.outputs.app }}
+      landing: ${{ steps.diff.outputs.landing }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            files="$(git ls-files)"            # first push: check everything
+          else
+            files="$(git diff --name-only "$BASE" HEAD)"
+          fi
+          has() { printf '%s\n' "$files" | grep -qE "$1" && echo true || echo false; }
+          {
+            echo "cli=$(has '^(cmd/|internal/|e2e/|go\.(mod|sum)$|Taskfile\.yml$|\.github/workflows/ci\.yml$)')"
+            echo "app=$(has '^(desktop/|packaging/|icons/|cmd/|internal/|go\.(mod|sum)$|Taskfile\.yml$|\.github/workflows/ci\.yml$)')"
+            echo "landing=$(has '^(landing/|\.github/workflows/(ci|pages)\.yml$)')"
+          } >> "$GITHUB_OUTPUT"
+
+  cli:
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Formatting
+        run: test -z "$(gofmt -l cmd internal e2e)" || { gofmt -l cmd internal e2e; exit 1; }
+      - name: Vet
+        run: go vet ./... && go vet -tags e2e ./e2e/
+      - name: Test
+        run: go test ./...
+      - name: Build
+        run: CGO_ENABLED=0 go build -trimpath -o bin/recap ./cmd/recap && bin/recap version
+
+  app:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: brew install go-task
+      - name: Build Recap.app and the installer (unsigned)
+        run: task pkg
+      - name: Inspect the package
+        run: pkgutil --payload-files dist/Recap-*.pkg | grep -q 'Contents/Helpers/recap'
+
+  landing:
+    needs: changes
+    if: needs.changes.outputs.landing == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: sudo apt-get install -y -qq libxml2-utils && sudo snap install task --classic
+      - run: task landing:check
