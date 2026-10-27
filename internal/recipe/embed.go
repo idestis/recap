@@ -10,8 +10,24 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/idestis/recap/internal/config"
+	"github.com/idestis/recap/internal/llm"
 	"github.com/idestis/recap/internal/redact"
 )
+
+// EmbeddingOptions enables embedding dedup when an embedding model is
+// configured and its client can be built. Otherwise it returns the zero value,
+// which keeps the token-overlap path (SPEC D-14). The cache lives under home.
+func EmbeddingOptions(m config.Model, home string) DedupOptions {
+	if !m.Enabled() {
+		return DedupOptions{}
+	}
+	cl, err := llm.New(m)
+	if err != nil {
+		return DedupOptions{}
+	}
+	return DedupOptions{Embedder: cl, Model: m.Name, CacheFile: filepath.Join(home, "embeddings.json"), Timeout: cl.HTTP.Timeout}
+}
 
 // EmbedMatchThreshold is the cosine similarity at which a draft becomes a
 // proposed variant of an existing recipe (SPEC D-14). Recipes that fix the same

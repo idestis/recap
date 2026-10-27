@@ -171,7 +171,7 @@ Non-interactive: --fixed / --not-fixed (or --yes = fixed), --publish, --json.`,
 					}
 				}
 			}
-			match, err := recipe.DedupWith(cfg.Repo, r, dedupOptions(cfg, st.Home))
+			match, err := recipe.DedupWith(cfg.Repo, r, recipe.EmbeddingOptions(cfg.Conf.Embedding, st.Home))
 			if err != nil {
 				return err
 			}

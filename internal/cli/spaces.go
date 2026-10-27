@@ -266,21 +266,6 @@ func spacesCmd() *cobra.Command {
 	return c
 }
 
-// dedupOptions enables embedding dedup when an embedding model is configured
-// and its client can be built. Otherwise it returns the zero value, which keeps
-// the token-overlap path (SPEC D-14).
-func dedupOptions(cfg env, home string) recipe.DedupOptions {
-	m := cfg.Conf.Embedding
-	if !m.Enabled() {
-		return recipe.DedupOptions{}
-	}
-	cl, err := llm.New(m)
-	if err != nil {
-		return recipe.DedupOptions{}
-	}
-	return recipe.DedupOptions{Embedder: cl, Model: m.Name, CacheFile: filepath.Join(home, "embeddings.json"), Timeout: cl.HTTP.Timeout}
-}
-
 // embedCmd configures the embedding model used for dedup (SPEC D-14).
 func embedCmd() *cobra.Command {
 	c := &cobra.Command{Use: "embedding", Short: "Embedding model for dedup (optional; falls back to token overlap)"}

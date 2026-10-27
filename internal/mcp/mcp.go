@@ -302,7 +302,11 @@ func (s *Server) SaveRecipe(_ context.Context, _ *sdk.CallToolRequest, in recipe
 	if err := st.SaveSession(se); err != nil {
 		return nil, SaveOut{}, err
 	}
-	match, err := recipe.Dedup(sp.Repo, r)
+	c, err := config.Load(st.Home)
+	if err != nil {
+		return nil, SaveOut{}, err
+	}
+	match, err := recipe.DedupWith(sp.Repo, r, recipe.EmbeddingOptions(c.Embedding, st.Home))
 	if err != nil {
 		return nil, SaveOut{}, err
 	}
