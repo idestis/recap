@@ -31,9 +31,8 @@
     scroll-padding-top: 5.5rem;
     -webkit-text-size-adjust: 100%;
   }
-  @media (prefers-reduced-motion: no-preference) {
-    html { scroll-behavior: smooth; }
-  }
+  /* Smooth scrolling is done in main.js for same-page links only, so a page
+     opened at #section lands there instead of animating from the top. */
   body {
     @apply bg-white text-navy font-sans antialiased dark:bg-night-2 dark:text-snow;
     min-width: 320px;
@@ -139,7 +138,9 @@
   }
   @media (prefers-reduced-motion: no-preference) {
     .rec-dot { animation: blink 1.4s steps(2, jump-none) infinite; }
-    .float { animation: bob 6s ease-in-out infinite; }
+    .float { animation: bob 6s ease-in-out infinite; will-change: transform; }
+    /* main.js pauses animations in sections that are off screen. */
+    .is-offscreen .float, .is-offscreen .rec-dot { animation-play-state: paused; }
     .float-2 { animation-delay: -2s; }
     .float-3 { animation-delay: -4s; }
   }
@@ -155,7 +156,7 @@
   }
 
   /* Docs prose */
-  .doc h2 { @apply mt-14 scroll-mt-24 border-t border-navy/10 pt-8 text-2xl font-extrabold tracking-tight first:mt-0 first:border-0 first:pt-0 dark:border-white/10; }
+  .doc h2 { @apply mt-14 border-t border-navy/10 pt-8 text-2xl font-extrabold tracking-tight first:mt-0 first:border-0 first:pt-0 dark:border-white/10; }
   .doc h3 { @apply mt-8 mb-2 text-base font-bold; }
   .doc p, .doc li { @apply leading-7; }
   .doc p { @apply my-3 text-slate-ink dark:text-mist; }
@@ -177,3 +178,8 @@
 
 @keyframes blink { 50% { opacity: 0.2; } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* Landing <-> docs: cross-fade instead of a white flash between pages. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+}

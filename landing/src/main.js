@@ -1,5 +1,3 @@
-import './main.css'
-
 const root = document.documentElement
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -87,4 +85,23 @@ if (toc.length && 'IntersectionObserver' in window) {
   byId.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el) })
   document.querySelectorAll('[data-toc-details] a').forEach((a) =>
     a.addEventListener('click', () => a.closest('details').removeAttribute('open')))
+}
+
+// Same-page anchors scroll smoothly; links to another page load straight at the target.
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href*="#"]')
+  if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+  const url = new URL(a.href, location.href)
+  if (url.pathname !== location.pathname || !url.hash) return
+  const target = document.getElementById(decodeURIComponent(url.hash.slice(1)))
+  if (!target) return
+  e.preventDefault()
+  target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+  history.pushState(null, '', url.hash)
+})
+
+// Pause decorative animations in sections that are off screen (less repainting while scrolling).
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('is-offscreen', !e.isIntersecting)))
+  document.querySelectorAll('section').forEach((s) => { if (s.querySelector('.float, .rec-dot')) io.observe(s) })
 }
