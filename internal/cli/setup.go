@@ -195,7 +195,7 @@ func mcpCmd() *cobra.Command {
 }
 
 func loginCmd(name string) *cobra.Command {
-	phase := map[string]string{"slack": "v0.2 (SPEC D-19)", "wispr": "v0.2 (SPEC D-20)", "github": "v0.2"}[name]
+	phase := map[string]string{"slack": "v0.2 (SPEC D-19)", "github": "v0.2"}[name]
 	c := &cobra.Command{Use: name, Short: "Connect " + name + " (" + phase + ")"}
 	for _, sub := range []string{"login", "status", "logout"} {
 		sub := sub

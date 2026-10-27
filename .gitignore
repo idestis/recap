@@ -8,3 +8,6 @@ desktop/RecapTray/.build/
 docs/SPEC.md
 docs/WORKFLOWS.md
 node_modules/
+
+# Agent worktrees
+.claude/worktrees/

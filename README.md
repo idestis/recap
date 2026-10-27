@@ -83,7 +83,7 @@ Menu bar app: see [desktop/RecapTray/README.md](desktop/RecapTray/README.md).
 capture → redact → risk rules → draft → dedup → review → session folder → apply → recipes/
 ```
 
-- **Capture:** attached terminal tabs (`recap join` / `recap leave`), Claude Code hooks, `recap ctx` and the ⌥⇧Space overlay. Planned: Slack threads, Wispr Notetaker transcripts and Git commits pulled at stop.
+- **Capture:** attached terminal tabs (`recap join` / `recap leave`), Claude Code hooks, `recap ctx` and the ⌥⇧Space overlay. Dictation (macOS or Wispr Flow) types straight into the overlay. Planned: Slack threads and Git commits pulled at stop.
 - **Redact:** secrets are masked locally before anything is drafted or written.
 - **Risk:** deterministic rules label steps safe / risky / destructive (kubectl, terraform, helm, docker, cloud CLIs, SQL), and prod from the recorded context. A model may only raise risk.
 - **Draft:** templates, or your own model (Ollama or any OpenAI-compatible API) to name the recipe and write the situation, preconditions and step titles. Commands are never changed.
@@ -99,7 +99,7 @@ capture → redact → risk rules → draft → dedup → review → session fol
 | `recap start`, `join`, `leave`, `status`, `ctx`, `timeline`, `stop` | sessions |
 | `recap find`, `run`, `apply`, `publish`, `prune` | recipes |
 | `recap skill <recipe>` | turn a recipe into a Claude Code skill (runs through `recap run`) |
-| `recap mcp`, `slack`, `wispr`, `github` | agents and integrations (planned) |
+| `recap mcp`, `slack`, `github` | agents and integrations (planned) |
 | `--json`, `--yes`, `--dry-run`, `--space` | for agents and CI |
 
 
