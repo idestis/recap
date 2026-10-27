@@ -37,6 +37,9 @@ type Recipe struct {
 	Vars          []string
 	Tools         []string
 	Verified      string
+	// Unrun marks a recipe nobody has run yet (saved by an agent): trust starts
+	// at 0/0 and nothing is verified.
+	Unrun bool
 }
 
 // RiskLabel is the recipe-level risk: the highest step risk, plus prod.
@@ -214,8 +217,12 @@ func verifiedLabel(se *session.Session, env string) string {
 // Render produces deterministic Markdown with front matter.
 func (r *Recipe) Render() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "---\nid: %s\ntitle: %s\nrisk: %s\ntools: [%s]\ntrust: { runs: 1, ok: 1 }\nverified: [%s]\nvars: [%s]\n---\n\n",
-		r.ID, r.Title, r.RiskLabel(), strings.Join(r.Tools, ", "), r.Verified, strings.Join(r.Vars, ", "))
+	runs := 1
+	if r.Unrun {
+		runs = 0
+	}
+	fmt.Fprintf(&b, "---\nid: %s\ntitle: %s\nrisk: %s\ntools: [%s]\ntrust: { runs: %d, ok: %d }\nverified: [%s]\nvars: [%s]\n---\n\n",
+		r.ID, r.Title, r.RiskLabel(), strings.Join(r.Tools, ", "), runs, runs, r.Verified, strings.Join(r.Vars, ", "))
 	fmt.Fprintf(&b, "# %s\n\n## Situation\n\n%s\n\n", r.Title, r.Situation)
 	if len(r.Preconditions) > 0 {
 		b.WriteString("## Preconditions\n\n")
@@ -452,12 +459,21 @@ func WriteSession(repo string, se *session.Session, r *Recipe, match *Match, con
 		for _, p := range r.Preconditions {
 			fmt.Fprintf(&d, "+ precondition: %s\n", p)
 		}
-		fmt.Fprintf(&d, "+ verified: %s\n\n### Variant steps\n%s", r.Verified, r.stepsMarkdown())
+		if r.Unrun {
+			d.WriteString("+ unrun: true\n")
+		} else {
+			fmt.Fprintf(&d, "+ verified: %s\n", r.Verified)
+		}
+		fmt.Fprintf(&d, "\n### Variant steps\n%s", r.stepsMarkdown())
 	} else {
 		// The full recipe goes in recipe.md so its front matter sits at the top
 		// of a file and GitHub renders it; delta.md stays a short summary.
-		fmt.Fprintf(&d, "## ADDED %s\n\n**%s** · `%s` · %d steps · verified %s\n\nNew recipe `recipes/%s.md`, in full in [recipe.md](recipe.md). Context: [context.md](context.md).\n",
-			r.ID, r.Title, r.RiskLabel(), len(r.Steps), r.Verified, r.ID)
+		verified := "verified " + r.Verified
+		if r.Unrun {
+			verified = "not run yet"
+		}
+		fmt.Fprintf(&d, "## ADDED %s\n\n**%s** · `%s` · %d steps · %s\n\nNew recipe `recipes/%s.md`, in full in [recipe.md](recipe.md). Context: [context.md](context.md).\n",
+			r.ID, r.Title, r.RiskLabel(), len(r.Steps), verified, r.ID)
 	}
 	files := map[string]string{"session.yaml": y.String(), "delta.md": d.String(), "context.md": contextMD}
 	if match == nil {
@@ -575,6 +591,7 @@ var (
 func mergeVariant(doc, delta string) (string, error) {
 	var variant, verified string
 	var pre []string
+	unrun := false
 	lines := strings.Split(delta, "\n")
 	for _, l := range lines {
 		switch {
@@ -582,12 +599,15 @@ func mergeVariant(doc, delta string) (string, error) {
 			variant = strings.TrimPrefix(l, "+ variant: ")
 		case strings.HasPrefix(l, "+ precondition: "):
 			pre = append(pre, strings.TrimPrefix(l, "+ precondition: "))
+		case l == "+ unrun: true":
+			unrun = true
 		case strings.HasPrefix(l, "+ verified: "):
 			verified = strings.TrimPrefix(l, "+ verified: ")
 		}
 	}
 	_, steps, _ := strings.Cut(delta, "### Variant steps\n")
-	if m := trustRe.FindStringSubmatch(doc); m != nil {
+	// A variant nobody ran yet adds no trust (agent-saved, SPEC D-17).
+	if m := trustRe.FindStringSubmatch(doc); m != nil && !unrun {
 		runs, _ := strconv.Atoi(m[1])
 		ok, _ := strconv.Atoi(m[2])
 		doc = strings.Replace(doc, m[0], fmt.Sprintf("trust: { runs: %d, ok: %d }", runs+1, ok+1), 1)

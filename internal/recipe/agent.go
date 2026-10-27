@@ -68,7 +68,7 @@ func FromProposal(p Proposal, prodContexts []string, now time.Time) (*Recipe, in
 	}
 	vars := map[string]bool{}
 	tools := map[string]bool{}
-	ctx, lastCtx := "", ""
+	ctx := ""
 	for _, in := range p.Steps {
 		text := clean(in.Cmd)
 		if text == "" {
@@ -80,7 +80,6 @@ func FromProposal(p Proposal, prodContexts []string, now time.Time) (*Recipe, in
 		}
 		res := risk.Classify(text, ctx, prodContexts)
 		res = raise(res, in.Risk)
-		lastCtx = ctx
 		if res.Tool != "" {
 			tools[res.Tool] = true
 		}
@@ -103,10 +102,8 @@ func FromProposal(p Proposal, prodContexts []string, now time.Time) (*Recipe, in
 	if len(r.Steps) == 0 {
 		return nil, masked, errors.New("a recipe needs at least one step with a command")
 	}
-	if lastCtx == "" {
-		lastCtx = "local"
-	}
-	r.Verified = lastCtx + " " + now.Format("2006-01-02")
+	// Nothing ran: no trust and no verified environment until a person runs it.
+	r.Unrun = true
 	r.Vars = keys(vars)
 	r.Tools = keys(tools)
 	return r, masked, nil

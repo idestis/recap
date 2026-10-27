@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -215,6 +216,10 @@ func TestSaveRecipeGates(t *testing.T) {
 			t.Fatalf("secret %q reached recipe.md:\n%s", secret, md)
 		}
 	}
+	// Nothing ran yet: no trust and no verified environment.
+	if !strings.Contains(string(md), "trust: { runs: 0, ok: 0 }\nverified: []\n") {
+		t.Fatalf("agent recipe must start unrun:\n%s", md)
+	}
 	if !strings.Contains(string(md), "kubectl delete secret deploy-token -n {namespace}") || !strings.Contains(string(md), "`destructive · prod`") {
 		t.Fatalf("recipe.md:\n%s", md)
 	}
@@ -257,6 +262,16 @@ func TestSaveRecipeDedupsIntoVariant(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(repo, out.Folder, "recipe.md")); err == nil {
 		t.Fatal("a variant must not carry a full recipe.md")
+	}
+	// Applying an unrun variant adds its precondition but no trust or verification.
+	before, _ := os.ReadFile(filepath.Join(repo, "recipes", "fix-oomkilled-pods.md"))
+	trust := regexp.MustCompile(`trust: \{[^}]*\}\nverified: \[[^\]]*\]`)
+	if _, err := recipe.Apply(repo, out.Handle, false); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := os.ReadFile(filepath.Join(repo, "recipes", "fix-oomkilled-pods.md"))
+	if trust.FindString(string(after)) != trust.FindString(string(before)) || !strings.Contains(string(after), "- Check no migration is running") {
+		t.Fatalf("apply of an unrun variant:\n%s", after)
 	}
 }
 
