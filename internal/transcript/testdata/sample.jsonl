@@ -1,0 +1,11 @@
+{"type":"permission-mode","permissionMode":"default"}
+{"type":"user","uuid":"u1","timestamp":"2026-01-02T10:00:00Z","message":{"role":"user","content":"Pods in payments keep crashing, token=abcdef123456 please check"}}
+{"type":"user","isMeta":true,"timestamp":"2026-01-02T10:00:01Z","message":{"role":"user","content":"meta noise"}}
+{"type":"assistant","uuid":"a1","timestamp":"2026-01-02T10:00:02Z","message":{"role":"assistant","content":[{"type":"text","text":"Checking pod status first."}]}}
+{"type":"assistant","uuid":"a2","timestamp":"2026-01-02T10:00:03Z","message":{"role":"assistant","content":[{"type":"tool_use","name":"Bash","input":{"command":"kubectl get pods -n payments"}}]}}
+{"type":"user","uuid":"u2","timestamp":"2026-01-02T10:00:04Z","message":{"role":"user","content":[{"type":"tool_result","content":"ok"}]}}
+{"type":"user","timestamp":"2026-01-02T10:00:05Z","message":{"role":"user","content":"<command-name>/plugin</command-name>"}}
+{"type":"assistant","isSidechain":true,"timestamp":"2026-01-02T10:00:06Z","message":{"role":"assistant","content":[{"type":"text","text":"sidechain"},{"type":"tool_use","name":"Bash","input":{"command":"ls"}}]}}
+{"type":"assistant","uuid":"a3","timestamp":"2026-01-02T10:00:07Z","message":{"role":"assistant","content":[{"type":"text","text":"Restarting the deployment to clear the stuck pods."},{"type":"tool_use","name":"Bash","input":{"command":"kubectl rollout restart deploy/api -n payments"}}]}}
+{"type":"assistant","uuid":"a4","timestamp":"2026-01-02T10:00:08Z","message":{"role":"assistant","content":[{"type":"tool_use","name":"Bash","input":{"command":"date"}}]}}
+{"type":"assistant","uuid":"a5","timestamp":"2026-01-02T10:00:09Z","message":{"role":"assistant","content":[{"type":"text","text":"Now verifying."},{"type":"tool_use","name":"Bash","input":{"command":"kubectl get pods"}}]}}

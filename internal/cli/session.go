@@ -450,6 +450,7 @@ func contextMarkdown(se *session.Session, evs []session.Event) string {
 	}
 	section("Decisions", func(e session.Event) bool { return e.Kind == "note" && hasTag(e.Tags, "decision") })
 	section("Notes", func(e session.Event) bool { return e.Kind == "note" && !hasTag(e.Tags, "decision") })
+	section("Intent (Claude Code)", func(e session.Event) bool { return e.Kind == "intent" && hasTag(e.Tags, "step") })
 	section("Links", func(e session.Event) bool { return e.Kind == "link" })
 	return b.String()
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/idestis/recap/internal/risk"
 	"github.com/idestis/recap/internal/session"
 	"github.com/idestis/recap/internal/store"
+	"github.com/idestis/recap/internal/transcript"
 )
 
 func findCmd() *cobra.Command {
@@ -488,7 +489,16 @@ func hookCmd() *cobra.Command {
 	claudeStop := &cobra.Command{
 		Use: "claude-stop",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_ = readHookInput() // MVP: read transcript_path at session stop for intent (SPEC D-18)
+			// Records intent from the transcript (SPEC D-18). Any failure is
+			// silent: hooks must never break Claude Code.
+			in := readHookInput()
+			h := os.Getenv("RECAP_SESSION")
+			if h == "" || in.TranscriptPath == "" {
+				return nil
+			}
+			if st, _, err := openStore(); err == nil {
+				_, _ = transcript.Record(st, h, in.TranscriptPath)
+			}
 			return nil
 		},
 	}
