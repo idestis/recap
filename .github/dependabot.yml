@@ -5,6 +5,14 @@ updates:
     schedule: { interval: monthly }
     commit-message: { prefix: ci }
     labels: [dependencies, ci]
+  - package-ecosystem: npm
+    directory: /landing
+    schedule: { interval: monthly }
+    commit-message: { prefix: build, include: scope }
+    labels: [dependencies, landing]
+    groups:
+      landing:
+        patterns: ["*"]
   - package-ecosystem: gomod
     directory: /
     schedule: { interval: monthly }

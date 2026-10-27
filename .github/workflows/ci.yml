@@ -83,5 +83,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
       - run: sudo apt-get install -y -qq libxml2-utils && sudo snap install task --classic
-      - run: task landing:check
+      - run: npm ci
+        working-directory: landing
+      - name: Build and check (no third-party requests)
+        run: task landing:check
