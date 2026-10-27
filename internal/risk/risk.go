@@ -109,3 +109,20 @@ func tool(cmd string) string {
 	}
 	return ""
 }
+
+var (
+	kubectxRe    = regexp.MustCompile(`^\s*kubectx\s+([A-Za-z0-9._:@/-]+)\s*$`)
+	useContextRe = regexp.MustCompile(`\bkubectl\s+config\s+use-context\s+([A-Za-z0-9._:@/-]+)`)
+)
+
+// ContextSwitch reports the kube context a command switches to. recap never
+// reads the live kubeconfig for a session: the context is what was recorded.
+func ContextSwitch(cmd string) (string, bool) {
+	if m := kubectxRe.FindStringSubmatch(cmd); m != nil && m[1] != "-" {
+		return m[1], true
+	}
+	if m := useContextRe.FindStringSubmatch(cmd); m != nil {
+		return m[1], true
+	}
+	return "", false
+}

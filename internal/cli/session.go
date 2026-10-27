@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/idestis/recap/internal/ctxdetect"
+	"github.com/idestis/recap/internal/recipe"
 	"github.com/idestis/recap/internal/redact"
 	"github.com/idestis/recap/internal/risk"
 	"github.com/idestis/recap/internal/session"
@@ -48,7 +49,6 @@ func startCmd() *cobra.Command {
 				NameSource:  "start",
 				Description: desc,
 				StartedAt:   now,
-				KubeContext: store.KubeContext(), // file read only: instant and offline
 				Links:       map[string]string{},
 				Tabs:        []string{currentTTY()},
 				Space:       cfg.Space.Name,
@@ -75,9 +75,6 @@ func startCmd() *cobra.Command {
 			var ctxs []string
 			if se.Space != "" {
 				ctxs = append(ctxs, "space "+se.Space)
-			}
-			if se.KubeContext != "" {
-				ctxs = append(ctxs, "kube "+se.KubeContext)
 			}
 			for _, k := range []string{"slack", "slack_name", "incident"} {
 				if v := se.Links[k]; v != "" {
@@ -247,7 +244,6 @@ func statusCmd() *cobra.Command {
 				}
 				info("links    %s", strings.Join(l, " · "))
 			}
-			note(dim("pulled at stop (v0.2): slack, wispr, git"))
 			return nil
 		},
 	}
@@ -376,8 +372,7 @@ func timelineCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			se, err := st.LoadSession(h)
-			if err != nil {
+			if _, err := st.LoadSession(h); err != nil {
 				return err
 			}
 			evs, err := st.Events(h)
@@ -391,12 +386,13 @@ func timelineCmd() *cobra.Command {
 				return printJSON(evs)
 			}
 			prod := loadRepoSettings(cfg.Repo).ProdContexts
-			for _, e := range evs {
+			ctxs := recipe.Contexts(evs)
+			for i, e := range evs {
 				src := fmt.Sprintf("%-9s", sourceLabel(e))
 				line := e.Text
 				tag := ""
 				if e.Kind == "cmd" {
-					r := risk.Classify(e.Text, se.KubeContext, prod)
+					r := risk.Classify(e.Text, ctxs[i], prod)
 					if r.Changes() {
 						tag = "  " + amber(r.Label())
 					}

@@ -78,15 +78,16 @@ var (
 func Draft(se *session.Session, events []session.Event, prodContexts []string) (*Recipe, int) {
 	masked := 0
 	r := &Recipe{
-		ID:       se.Name,
-		Title:    titleCase(se.Description),
-		Verified: verifiedLabel(se),
+		ID:    se.Name,
+		Title: titleCase(se.Description),
 	}
 	var notes []string
 	seen := map[string]bool{}
 	vars := map[string]bool{}
 	tools := map[string]bool{}
-	for _, ev := range events {
+	ctxs := Contexts(events)
+	lastCtx := ""
+	for i, ev := range events {
 		red := redact.Redact(ev.Text)
 		masked += red.Count
 		text := red.Text
@@ -110,7 +111,8 @@ func Draft(se *session.Session, events []session.Event, prodContexts []string) (
 				continue
 			}
 			seen[p] = true
-			res := risk.Classify(text, se.KubeContext, prodContexts)
+			res := risk.Classify(text, ctxs[i], prodContexts)
+			lastCtx = ctxs[i]
 			if res.Tool != "" {
 				tools[res.Tool] = true
 			}
@@ -124,6 +126,7 @@ func Draft(se *session.Session, events []session.Event, prodContexts []string) (
 	if len(notes) > 0 {
 		r.Situation += ". " + strings.Join(notes, ". ")
 	}
+	r.Verified = verifiedLabel(se, lastCtx)
 	r.Vars = keys(vars)
 	r.Tools = keys(tools)
 	return r, masked
@@ -145,6 +148,10 @@ func parametrize(cmd string, vars map[string]bool) string {
 	if dockerRe.MatchString(cmd) && containerIDRe.MatchString(cmd) {
 		vars["container"] = true
 		cmd = containerIDRe.ReplaceAllString(cmd, "{container}")
+	}
+	if c, ok := risk.ContextSwitch(cmd); ok {
+		vars["context"] = true
+		cmd = strings.Replace(cmd, c, "{context}", 1)
 	}
 	if ctxRe.MatchString(cmd) {
 		vars["context"] = true
@@ -181,8 +188,23 @@ func undoFor(cmd string) string {
 	return ""
 }
 
-func verifiedLabel(se *session.Session) string {
-	env := se.KubeContext
+// Contexts returns the kube context in effect at each event, from recorded
+// switches only (kubectx, kubectl config use-context) — never guessed.
+func Contexts(events []session.Event) []string {
+	out := make([]string, len(events))
+	cur := ""
+	for i, ev := range events {
+		if ev.Kind == "cmd" && (ev.Exit == nil || *ev.Exit == 0) {
+			if c, ok := risk.ContextSwitch(ev.Text); ok {
+				cur = c
+			}
+		}
+		out[i] = cur
+	}
+	return out
+}
+
+func verifiedLabel(se *session.Session, env string) string {
 	if env == "" {
 		env = "local"
 	}

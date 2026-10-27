@@ -11,7 +11,6 @@ type Session struct {
 	Description string            `json:"description"`
 	StartedAt   time.Time         `json:"started_at"`
 	StoppedAt   *time.Time        `json:"stopped_at,omitempty"`
-	KubeContext string            `json:"kube_context,omitempty"`
 	Links       map[string]string `json:"links,omitempty"`
 	Tabs        []string          `json:"tabs,omitempty"`
 	Space       string            `json:"space,omitempty"` // config space whose repo gets the recipe
