@@ -21,7 +21,7 @@ payments crashloop after config change. Pods were crash-looping after the config
 
 ## Steps
 
-1. kubectx prod-eu — `safe`
+1. kubectx {context} — `safe`
 
    ```sh
    kubectx {context}
@@ -61,7 +61,7 @@ payments crashloop after config change. Pods were crash-looping after the config
 
    Undo: `helm rollback payments`
 
-7. docker logs 0123456789ab — `safe`
+7. docker logs {container} — `safe`
 
    ```sh
    docker logs {container}

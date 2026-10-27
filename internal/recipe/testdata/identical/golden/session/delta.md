@@ -4,7 +4,7 @@
 + verified: prod-eu 2026-05-02
 
 ### Variant steps
-1. kubectx prod-eu — `safe`
+1. kubectx {context} — `safe`
 
    ```sh
    kubectx {context}
@@ -44,7 +44,7 @@
 
    Undo: `helm rollback payments`
 
-7. docker logs 0123456789ab — `safe`
+7. docker logs {container} — `safe`
 
    ```sh
    docker logs {container}

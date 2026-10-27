@@ -116,7 +116,7 @@ func Draft(se *session.Session, events []session.Event, prodContexts []string) (
 			if res.Tool != "" {
 				tools[res.Tool] = true
 			}
-			r.Steps = append(r.Steps, Step{Title: stepTitle(text), Cmd: p, Risk: res, Undo: undoFor(p)})
+			r.Steps = append(r.Steps, Step{Title: stepTitle(p), Cmd: p, Risk: res, Undo: undoFor(p)})
 		}
 	}
 	if len(r.Steps) > 12 {

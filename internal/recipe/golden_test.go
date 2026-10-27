@@ -113,9 +113,6 @@ func TestGoldenDraftRender(t *testing.T) {
 		if masked == 0 {
 			t.Error("expected the bearer token to be redacted")
 		}
-		// KNOWN QUIRK (documented, not fixed): stepTitle runs on the raw command, so
-		// titles keep literal values the body parametrizes ("kubectx prod-eu" vs
-		// "kubectx {context}", "docker logs 0123456789ab" vs "{container}").
 		golden(t, "added", "recipe.md", r.Render())
 	})
 }
