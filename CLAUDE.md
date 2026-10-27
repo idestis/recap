@@ -7,7 +7,8 @@ Guidance for Claude Code and other agents working in this repo. Decisions are re
 - **CLI (Go): works end to end.** Context (e.g. Kubernetes) comes only from recorded commands (`kubectx`, `kubectl config use-context`, `--context`); sessions never read live state. Only the Claude Code PreToolUse guard reads the live kubeconfig, because it judges the command about to run. Sessions with CalVer handles and ULIDs, zsh/bash join/leave, `ctx` type detection, timeline, stop with interactive review (huh) or flags, redaction, risk rules, template drafting + optional model drafting (Ollama / OpenAI-compatible, `internal/llm`, `internal/draft`), dedup into variants, **spaces** (many recipe repos, chosen by path; `internal/config`), **publishing** per space (`pr` / `push` / `none`; `internal/publish`), apply/keep/prune, find, run with preflight (by name or symptom, asks for vars), Claude Code hooks and `recap skill` (recipe → Claude Code skill).
 - **Desktop (SwiftUI):** builds universal. Tray (status, space picker, launch at login, install CLI, stop → publish) + ⌥⇧Space overlay for quick context with dictation. Calls the bundled CLI.
 - **Packaging:** `task pkg` → `dist/Recap-<version>.pkg` (Recap.app + universal CLI, postinstall links `/usr/local/bin/recap`). Unsigned unless signing env vars are set.
-- **Stubs:** `recap mcp`, `slack|github login`.
+- **Also done:** `recap mcp` (stdio, five tools; `internal/mcp`), fish, stop review related/maybe/excluded (`internal/review`), embedding dedup with jaccard fallback, Claude Code Stop hook records transcript intent (`internal/transcript`).
+- **Stubs:** `slack|github login`.
 
 ## Build and test
 
@@ -34,9 +35,9 @@ Git tests set `GIT_CONFIG_GLOBAL` to an empty file so user signing config doesn'
 | CLI | Cobra (plain help) + `huh` only for choices behind `interactive()` | same; no Charm-styled help |
 | State | files under `RECAP_HOME`, default `~/.recap` (`internal/store`, `config.yaml`) | `recapd` daemon, Unix socket, `modernc.org/sqlite` |
 | Drafting | templates + OpenAI-compatible/Ollama (`internal/llm`, `internal/draft`) | more model tasks (naming, classify, compare) |
-| Dedup | token overlap + tool + prod class | local embeddings, cosine in Go |
+| Dedup | embeddings (OpenAI-compatible `/v1/embeddings`, cosine in Go) gated by tool + prod class; token overlap fallback | same, calibrated threshold |
 | Secrets | model keys via `zalando/go-keyring` | + Slack/GitHub tokens |
-| MCP | stub | official MCP Go SDK, stdio |
+| MCP | official MCP Go SDK, stdio | same, via daemon |
 | Desktop | SwiftUI, calls CLI | calls daemon socket; Liquid Glass on macOS 26 |
 | Release | Taskfile + `packaging/macos` (.pkg) | GoReleaser, signed + notarized, Homebrew formula + cask |
 
@@ -67,14 +68,10 @@ Git tests set `GIT_CONFIG_GLOBAL` to an empty file so user signing config doesn'
 ## MVP task list (suggested order)
 
 1. Click-test the tray app (hotkey, overlay, dictation, stop → publish); signing + notarization with a Developer ID.
-2. Golden-file tests for `internal/recipe` (draft, render, MODIFIED merge, identical-steps case).
-3. ~~fish integration~~ (done).
-4. "maybe" bucket in the stop review (relevance scoring, model sorts the rest).
-5. Embedding dedup (Ollama embeddings).
-6. Tray "add context" for any active session from the space picker.
-7. `recapd` daemon + SQLite store behind the current `store` API.
-8. `recap mcp` with the five tools.
-9. GoReleaser, signing, notarization, Homebrew formula.
+2. Calibrate the embedding threshold on real recipes (`ollama pull nomic-embed-text`).
+3. Tray "add context" for any active session from the space picker; tray reads the stop `maybe` count.
+4. `recapd` daemon + SQLite store behind the current `store` API (covered by `internal/store` tests).
+5. GoReleaser, signing, notarization, Homebrew formula.
 
 Then v0.2 (Slack, GitHub, infra context, screenshot OCR + blur) (tracked as GitHub Project items).
 
