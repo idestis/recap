@@ -1,0 +1,116 @@
+# recap tasks — run `task --list`.
+version: "3"
+
+includes:
+  landing:
+    taskfile: landing/Taskfile.yml
+    dir: landing
+    optional: true
+
+vars:
+  BIN: ./bin/recap
+  DIST: ./dist
+  VERSION:
+    sh: (git describe --tags --dirty 2>/dev/null || echo v0.1.0-dev) | sed 's/^v//'
+  COMMIT:
+    sh: git rev-parse --short HEAD 2>/dev/null || echo none
+  LDFLAGS: -s -w -X github.com/idestis/recap/internal/version.Version={{.VERSION}} -X github.com/idestis/recap/internal/version.Commit={{.COMMIT}}
+
+env:
+  CGO_ENABLED: "0"
+
+tasks:
+  default:
+    cmds: [task --list]
+    silent: true
+
+  build:
+    desc: Build the recap CLI for this machine → bin/recap
+    sources: ["**/*.go", go.mod, go.sum, "internal/**/*.sh", "internal/**/*.md"]
+    generates: ["{{.BIN}}"]
+    cmds:
+      - go build -trimpath -ldflags "{{.LDFLAGS}}" -o {{.BIN}} ./cmd/recap
+
+  build:universal:
+    desc: Build a universal (arm64 + amd64) macOS CLI → dist/recap
+    platforms: [darwin]
+    cmds:
+      - mkdir -p {{.DIST}}/cli
+      - GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "{{.LDFLAGS}}" -o {{.DIST}}/cli/recap-arm64 ./cmd/recap
+      - GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags "{{.LDFLAGS}}" -o {{.DIST}}/cli/recap-amd64 ./cmd/recap
+      - lipo -create -output {{.DIST}}/recap {{.DIST}}/cli/recap-arm64 {{.DIST}}/cli/recap-amd64
+
+  install:
+    desc: go install the CLI into $GOBIN
+    cmds:
+      - go install -trimpath -ldflags "{{.LDFLAGS}}" ./cmd/recap
+
+  test:
+    desc: Run Go tests
+    cmds:
+      - go test ./...
+
+  test:e2e:
+    desc: End-to-end tests with a local Ollama model (RECAP_E2E_MODEL=llama3.1:8b)
+    cmds:
+      - go test -tags e2e -count=1 -timeout 20m -v ./e2e/
+
+  vet:
+    cmds:
+      - go vet ./...
+
+  fmt:check:
+    cmds:
+      - test -z "$(gofmt -l cmd internal)" || (gofmt -l cmd internal; exit 1)
+
+  check:
+    desc: fmt + vet + test (what CI runs)
+    cmds:
+      - task: fmt:check
+      - task: vet
+      - task: test
+
+  desktop:
+    desc: Debug build of the tray app (swift build)
+    platforms: [darwin]
+    dir: desktop/RecapTray
+    cmds:
+      - swift build
+
+  app:
+    desc: Assemble dist/Recap.app with the bundled universal CLI
+    platforms: [darwin]
+    deps: [build:universal]
+    cmds:
+      - RECAP_BIN={{.DIST}}/recap VERSION={{.VERSION}} OUT={{.DIST}} packaging/macos/build-app.sh
+
+  pkg:
+    desc: Build dist/Recap-<version>.pkg (set SIGN_APP_IDENTITY / SIGN_PKG_IDENTITY / NOTARY_PROFILE to sign)
+    platforms: [darwin]
+    deps: [app]
+    cmds:
+      - VERSION={{.VERSION}} OUT={{.DIST}} packaging/macos/build-pkg.sh
+
+  pkg:install:
+    desc: Install the built .pkg on this Mac (asks for your password)
+    platforms: [darwin]
+    cmds:
+      - sudo installer -pkg {{.DIST}}/Recap-{{.VERSION}}.pkg -target /
+
+  uninstall:
+    desc: Remove Recap.app and the CLI link (keeps ~/.recap and your repos)
+    platforms: [darwin]
+    cmds:
+      - sudo packaging/macos/uninstall.sh
+
+  ollama:smoke:
+    desc: End-to-end session in throwaway dirs, drafted by a local Ollama model (MODEL=llama3.1:8b)
+    deps: [build]
+    vars:
+      MODEL: '{{.MODEL | default "llama3.1:8b"}}'
+    cmds:
+      - scripts/smoke.sh {{.MODEL}}
+
+  clean:
+    cmds:
+      - rm -rf bin dist desktop/RecapTray/.build

@@ -1,0 +1,9 @@
+bin/
+dist/
+.DS_Store
+desktop/RecapTray/.build/
+.task/
+
+# Design notes stay local until they move to GitHub Project items.
+docs/SPEC.md
+docs/WORKFLOWS.md
