@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/idestis/recap/internal/capture"
 	"github.com/idestis/recap/internal/ctxdetect"
 	"github.com/idestis/recap/internal/recipe"
 	"github.com/idestis/recap/internal/redact"
@@ -119,13 +120,7 @@ func resolveHandle(st *store.Store, args []string) (string, error) {
 	if len(args) > 0 && args[0] != "" {
 		return args[0], nil
 	}
-	if h := os.Getenv("RECAP_SESSION"); h != "" {
-		return h, nil
-	}
-	if h := st.Active(); h != "" {
-		return h, nil
-	}
-	return "", errors.New("no active session — start one with: recap start \"<what's wrong>\"")
+	return capture.ActiveHandle(st)
 }
 
 func joinCmd() *cobra.Command {
@@ -268,10 +263,6 @@ func ctxCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			se, err := st.LoadSession(h)
-			if err != nil {
-				return err
-			}
 			input := strings.Join(args, " ")
 			if input == "" || input == "-" {
 				b, err := io.ReadAll(io.LimitReader(os.Stdin, 4<<20))
@@ -280,82 +271,26 @@ func ctxCmd() *cobra.Command {
 				}
 				input = string(b)
 			}
-			items := ctxdetect.Detect(input)
-			if len(items) == 0 {
-				return errors.New("nothing to add")
-			}
-			changed := false
-			for _, it := range items {
-				ev := session.Event{Time: time.Now(), Kind: it.Kind, Source: source, Text: it.Text, LinkType: it.LinkType, Ref: it.Ref}
-				if it.Decision {
-					ev.Tags = []string{"decision"}
-				}
+			added, err := capture.Add(st, h, input, source)
+			for _, it := range added {
 				switch {
 				case it.Kind == "file":
-					dst, err := copyFile(it.Text, st.FilesDir(h))
-					if err != nil {
-						return err
-					}
-					ev.Text = dst
-					ok("File attached %s", dim(filepath.Base(dst)+" · kept locally, never in Git"))
+					ok("File attached %s", dim(filepath.Base(it.Text)+" · kept locally, never in Git"))
 				case it.LinkType == "slack":
-					se.Links["slack"] = it.Ref
-					changed = true
 					ok("Slack channel linked %s", dim(it.Ref+" · messages pulled for the whole session at stop"))
 				case it.Kind == "link":
-					ok("%s linked %s", linkLabel(it.LinkType), dim(it.Text))
+					ok("%s linked %s", capture.LinkLabel(it.LinkType), dim(it.Text))
 				case it.Decision:
 					ok("Note added %s", amber("· decision"))
 				default:
 					ok("Note added")
 				}
-				if err := st.AppendEvent(h, ev); err != nil {
-					return err
-				}
 			}
-			if changed {
-				return st.SaveSession(se)
-			}
-			return nil
+			return err
 		},
 	}
 	c.Flags().StringVar(&source, "source", "ctx", "who added it: ctx | overlay | mcp")
 	return c
-}
-
-func linkLabel(t string) string {
-	switch t {
-	case "dashboard":
-		return "Dashboard"
-	case "pr":
-		return "Pull request"
-	case "call":
-		return "Call"
-	case "slack-thread":
-		return "Slack thread"
-	case "issue":
-		return "Incident/issue"
-	}
-	return "Link"
-}
-
-func copyFile(src, dir string) (string, error) {
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return "", err
-	}
-	in, err := os.Open(src)
-	if err != nil {
-		return "", err
-	}
-	defer in.Close()
-	dst := filepath.Join(dir, time.Now().Format("150405")+"-"+filepath.Base(src))
-	out, err := os.Create(dst)
-	if err != nil {
-		return "", err
-	}
-	defer out.Close()
-	_, err = io.Copy(out, in)
-	return dst, err
 }
 
 func timelineCmd() *cobra.Command {
@@ -420,39 +355,11 @@ func sourceLabel(e session.Event) string {
 	case e.Kind == "cmd":
 		return "Terminal"
 	case e.Kind == "link":
-		return linkLabel(e.LinkType)
+		return capture.LinkLabel(e.LinkType)
 	case e.Kind == "file":
 		return "File"
 	}
 	return "Note"
-}
-
-// contextMarkdown is the short "why" kept with the session folder: decisions,
-// notes and links. Raw commands and messages stay in the local store.
-func contextMarkdown(se *session.Session, evs []session.Event) string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "# %s · %s\n\n%s\n\n", se.Handle, se.Name, se.Description)
-	end := time.Now()
-	if se.StoppedAt != nil {
-		end = *se.StoppedAt
-	}
-	fmt.Fprintf(&b, "Window: %s – %s\n\n", se.StartedAt.Format("2006-01-02 15:04"), end.Format("15:04"))
-	section := func(title string, pick func(session.Event) bool) {
-		var lines []string
-		for _, e := range evs {
-			if pick(e) {
-				lines = append(lines, fmt.Sprintf("- %s %s", e.Time.Format("15:04"), redact.Redact(e.Text).Text))
-			}
-		}
-		if len(lines) > 0 {
-			fmt.Fprintf(&b, "## %s\n%s\n\n", title, strings.Join(lines, "\n"))
-		}
-	}
-	section("Decisions", func(e session.Event) bool { return e.Kind == "note" && hasTag(e.Tags, "decision") })
-	section("Notes", func(e session.Event) bool { return e.Kind == "note" && !hasTag(e.Tags, "decision") })
-	section("Intent (Claude Code)", func(e session.Event) bool { return e.Kind == "intent" && hasTag(e.Tags, "step") })
-	section("Links", func(e session.Event) bool { return e.Kind == "link" })
-	return b.String()
 }
 
 func activeCmd() *cobra.Command {

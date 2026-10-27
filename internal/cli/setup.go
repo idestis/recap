@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/idestis/recap/internal/mcp"
 	"github.com/idestis/recap/internal/shell"
 )
 
@@ -184,12 +185,21 @@ func hasHookCommand(list []any, command string) bool {
 func mcpCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "mcp",
-		Short: "Start the MCP server for AI agents (MVP)",
+		Short: "Serve recipes to AI agents over MCP (stdio)",
+		Long: `Run the MCP server on stdin/stdout (SPEC D-17). Tools: search_recipes, get_recipe,
+run_recipe (preflight only, never executes), save_recipe (redaction, risk rules and
+dedup, written as a session folder for review), add_context (active session).
+
+  claude mcp add recap -- recap mcp                 # register with Claude Code
+  claude mcp add recap -- recap mcp --space team    # pin a space`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println(amber("◌ ") + "MCP server is planned for the MVP (SPEC D-17).")
-			note("Tools: search_recipes, get_recipe, run_recipe, save_recipe, add_context")
-			note("Register later with: " + bold("claude mcp add recap -- recap mcp"))
-			return nil
+			if isTTY(os.Stdin) {
+				fmt.Fprintln(os.Stderr, dim("recap mcp speaks MCP on stdin/stdout; register it with: claude mcp add recap -- recap mcp"))
+			}
+			wd, _ := os.Getwd()
+			s := &mcp.Server{Space: flagSpace, Dir: wd}
+			return s.Run(cmd.Context())
 		},
 	}
 }

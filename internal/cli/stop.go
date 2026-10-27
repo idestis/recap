@@ -175,7 +175,7 @@ Non-interactive: --fixed / --not-fixed (or --yes = fixed), --publish, --json.`,
 			if err != nil {
 				return err
 			}
-			dir, err := recipe.WriteSession(cfg.Repo, se, r, match, contextMarkdown(se, kept))
+			dir, err := recipe.WriteSession(cfg.Repo, se, r, match, recipe.ContextMarkdown(se, kept))
 			if err != nil {
 				return err
 			}

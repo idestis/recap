@@ -99,7 +99,8 @@ capture → redact → risk rules → draft → dedup → review → session fol
 | `recap start`, `join`, `leave`, `status`, `ctx`, `timeline`, `stop` | sessions |
 | `recap find`, `run`, `apply`, `publish`, `prune` | recipes |
 | `recap skill <recipe>` | turn a recipe into a Claude Code skill (runs through `recap run`) |
-| `recap mcp`, `slack`, `github` | agents and integrations (planned) |
+| `recap mcp` | MCP server over stdio for agents: `search_recipes`, `get_recipe`, `run_recipe` (preflight only), `save_recipe`, `add_context` (`claude mcp add recap -- recap mcp`) |
+| `recap slack`, `github` | integrations (planned) |
 | `--json`, `--yes`, `--dry-run`, `--space` | for agents and CI |
 
 
@@ -115,9 +116,11 @@ internal/llm/         OpenAI-compatible client (Ollama, OpenAI, …), Keychain k
 internal/draft/       model-assisted drafting (prompts/)
 internal/publish/     pr / push / none per space
 internal/ctxdetect/   one-input type detection
+internal/capture/     add context to the active session (ctx, overlay, MCP)
+internal/mcp/         MCP server (stdio) for agents
 internal/redact/      secret masking
 internal/risk/        risk rules
-internal/recipe/      draft, dedup, session folders, apply, find, prune
+internal/recipe/      draft, dedup, session folders, apply, find, run preflight, prune
 internal/shell/       zsh/bash/fish integration scripts
 desktop/RecapTray/    SwiftUI menu bar + overlay
 packaging/macos/      Recap.app + .pkg build scripts

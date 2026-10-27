@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -147,14 +146,8 @@ func openStoreFor(name string) (*store.Store, env, error) {
 	if name == "" {
 		name = flagSpace
 	}
-	if name == "" {
-		name = os.Getenv("RECAP_SPACE")
-	}
-	if _, ok := c.Space(name); name != "" && !ok && name == os.Getenv("RECAP_SPACE") {
-		name = "" // a stale env var should not break every command
-	}
 	wd, _ := os.Getwd()
-	sp, err := c.Resolve(name, wd)
+	sp, err := c.ResolveSpace(name, wd)
 	if err != nil {
 		return nil, env{}, err
 	}
@@ -168,37 +161,8 @@ func needRepo(cfg env) error {
 	return nil
 }
 
-// repoSettings holds values from <repo>/recap.yaml (tiny line parser for the prototype).
-type repoSettings struct {
-	ProdContexts       []string
-	ApplyKeepsSessions bool
-}
-
-var listRe = regexp.MustCompile(`\[(.*)\]`)
-
-func loadRepoSettings(repo string) repoSettings {
-	var rs repoSettings
-	b, err := os.ReadFile(filepath.Join(repo, "recap.yaml"))
-	if err != nil {
-		return rs
-	}
-	for _, l := range strings.Split(string(b), "\n") {
-		t := strings.TrimSpace(l)
-		switch {
-		case strings.HasPrefix(t, "prod_contexts:"):
-			if m := listRe.FindStringSubmatch(t); m != nil {
-				for _, p := range strings.Split(m[1], ",") {
-					if p = strings.Trim(strings.TrimSpace(p), `"'`); p != "" {
-						rs.ProdContexts = append(rs.ProdContexts, p)
-					}
-				}
-			}
-		case strings.HasPrefix(t, "apply_keeps_sessions:"):
-			rs.ApplyKeepsSessions = strings.HasSuffix(t, "true")
-		}
-	}
-	return rs
-}
+// loadRepoSettings reads <repo>/recap.yaml (internal/config).
+func loadRepoSettings(repo string) config.RepoSettings { return config.LoadRepo(repo) }
 
 func currentTTY() string {
 	if t := os.Getenv("TTY"); t != "" {

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -54,54 +53,6 @@ func findCmd() *cobra.Command {
 	}
 }
 
-var (
-	stepLineRe = regexp.MustCompile(`^\d+\.\s+(.+?)\s+—\s+(.+)$`)
-	codeRe     = regexp.MustCompile("`([^`]+)`")
-	varRe      = regexp.MustCompile(`\{([a-z_]+)\}`)
-)
-
-type runStep struct{ title, label, cmd, undo string }
-
-func parseSteps(doc string) []runStep {
-	_, body, ok := strings.Cut(doc, "## Steps\n")
-	body = strings.TrimLeft(body, "\n")
-	if !ok {
-		return nil
-	}
-	body, _, _ = strings.Cut(body, "\n## ")
-	var out []runStep
-	inFence := false
-	for _, l := range strings.Split(body, "\n") {
-		t := strings.TrimSpace(l)
-		if strings.HasPrefix(t, "```") {
-			inFence = !inFence
-			continue
-		}
-		if inFence {
-			if len(out) > 0 && out[len(out)-1].cmd == "" && t != "" {
-				out[len(out)-1].cmd = t
-			}
-			continue
-		}
-		if m := stepLineRe.FindStringSubmatch(t); m != nil {
-			out = append(out, runStep{title: m[1], label: strings.Trim(m[2], "`")})
-			continue
-		}
-		if len(out) == 0 {
-			continue
-		}
-		cur := &out[len(out)-1]
-		if strings.HasPrefix(t, "Undo:") {
-			if m := codeRe.FindStringSubmatch(t); m != nil {
-				cur.undo = m[1]
-			}
-		} else if m := codeRe.FindStringSubmatch(t); m != nil && cur.cmd == "" {
-			cur.cmd = m[1] // older recipes: inline `command`
-		}
-	}
-	return out
-}
-
 func runCmd() *cobra.Command {
 	var vars []string
 	var execute bool
@@ -124,8 +75,7 @@ Missing {variables} are asked for in a terminal; elsewhere pass --var name=value
 			if err != nil {
 				return err
 			}
-			path := m.Path
-			b, err := os.ReadFile(path)
+			b, err := os.ReadFile(m.Path)
 			if err != nil {
 				return err
 			}
@@ -134,62 +84,49 @@ Missing {variables} are asked for in a terminal; elsewhere pass --var name=value
 				k, v, _ := strings.Cut(kv, "=")
 				values[k] = v
 			}
-			steps := parseSteps(string(b))
-			if err := askVars(steps, values); err != nil {
+			if err := askVars(recipe.ParseSteps(string(b)), values); err != nil {
 				return err
 			}
-			fill := func(s string) (string, []string) {
-				var missing []string
-				out := varRe.ReplaceAllStringFunc(s, func(m string) string {
-					k := m[1 : len(m)-1]
-					if v, ok := values[k]; ok {
-						return v
-					}
-					missing = append(missing, k)
-					return m
-				})
-				return out, missing
-			}
+			pf := recipe.BuildPreflight(m, string(b), values)
 			fmt.Println(bold("Preflight") + dim("  "+m.ID))
-			var missingAll []string
-			for i, s := range steps {
-				c, miss := fill(s.cmd)
-				missingAll = append(missingAll, miss...)
-				lbl := green(s.label)
-				if s.label != "safe" {
-					lbl = amber(s.label)
+			for i, s := range pf.Steps {
+				lbl := green(s.Label)
+				if !s.Safe() {
+					lbl = amber(s.Label)
 				}
-				fmt.Printf("  %d  %-32s %s\n     %s\n", i+1, s.title, lbl, dim(c))
-				if s.undo != "" {
-					u, _ := fill(s.undo)
-					fmt.Printf("     %s %s\n", dim("undo"), dim(u))
+				fmt.Printf("  %d  %-32s %s\n     %s\n", i+1, s.Title, lbl, dim(s.Cmd))
+				if s.Undo != "" {
+					fmt.Printf("     %s %s\n", dim("undo"), dim(s.Undo))
 				}
 			}
-			if len(missingAll) > 0 {
-				return fmt.Errorf("missing values: %s (pass --var name=value)", strings.Join(uniq(missingAll), ", "))
+			if !pf.Ready() {
+				return fmt.Errorf("missing values: %s (pass --var name=value)", strings.Join(pf.Missing, ", "))
 			}
 			if !execute || flagDryRun {
 				fmt.Println(dim("\n  Preflight only. Add --execute to run (prototype safety default)."))
 				return nil
 			}
 			allOK := true
-			for i, s := range steps {
-				c, _ := fill(s.cmd)
-				if s.label != "safe" && !ask(fmt.Sprintf("%d  %s %s Run it?", i+1, s.title, amber("["+s.label+"]"))) {
+			for i, s := range pf.Steps {
+				if !s.Safe() && !ask(fmt.Sprintf("%d  %s %s Run it?", i+1, s.Title, amber("["+s.Label+"]"))) {
 					fmt.Println(dim("  skipped; stopping here"))
 					allOK = false
 					break
 				}
-				x := exec.Command("bash", "-c", c)
+				x := exec.Command("bash", "-c", s.Cmd)
 				x.Stdout, x.Stderr, x.Stdin = os.Stdout, os.Stderr, os.Stdin
 				if err := x.Run(); err != nil {
-					fmt.Println(red("✗ ") + fmt.Sprintf("%d  %s failed: %v", i+1, s.title, err))
+					fmt.Println(red("✗ ") + fmt.Sprintf("%d  %s failed: %v", i+1, s.Title, err))
 					allOK = false
 					break
 				}
-				ok("%d  %s", i+1, s.title)
+				ok("%d  %s", i+1, s.Title)
 			}
-			return bumpTrust(path, allOK)
+			okc, runs, err := recipe.BumpTrust(m.Path, allOK)
+			if err == nil && runs > 0 {
+				ok("Run recorded %s", dim(fmt.Sprintf("· trust %d/%d", okc, runs)))
+			}
+			return err
 		},
 	}
 	c.Flags().StringArrayVar(&vars, "var", nil, "variable value, e.g. --var namespace=payments")
@@ -230,59 +167,18 @@ func resolveRecipe(repo, name string) (recipe.Match, error) {
 
 // askVars fills missing {variables} in step order: prompts in a terminal,
 // otherwise leaves them for the "missing values" error.
-func askVars(steps []runStep, values map[string]string) error {
+func askVars(steps []recipe.RunStep, values map[string]string) error {
 	if !interactive() {
 		return nil
 	}
-	for i, s := range steps {
-		for _, m := range varRe.FindAllStringSubmatch(s.cmd+" "+s.undo, -1) {
-			k := m[1]
-			if _, done := values[k]; done {
-				continue
-			}
-			v, err := input(k, fmt.Sprintf("step %d: %s", i+1, s.cmd))
-			if err != nil {
-				return err
-			}
-			values[k] = v
+	for _, v := range recipe.MissingVars(steps, values) {
+		val, err := input(v.Name, fmt.Sprintf("step %d: %s", v.Step, v.Cmd))
+		if err != nil {
+			return err
 		}
+		values[v.Name] = val
 	}
 	return nil
-}
-
-var trustRe = regexp.MustCompile(`trust: \{ runs: (\d+), ok: (\d+) \}`)
-
-func bumpTrust(path string, success bool) error {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	doc := string(b)
-	m := trustRe.FindStringSubmatch(doc)
-	if m == nil {
-		return nil
-	}
-	runs, _ := strconv.Atoi(m[1])
-	okc, _ := strconv.Atoi(m[2])
-	runs++
-	if success {
-		okc++
-	}
-	doc = strings.Replace(doc, m[0], fmt.Sprintf("trust: { runs: %d, ok: %d }", runs, okc), 1)
-	ok("Run recorded %s", dim(fmt.Sprintf("· trust %d/%d", okc, runs)))
-	return os.WriteFile(path, []byte(doc), 0o644)
-}
-
-func uniq(in []string) []string {
-	seen := map[string]bool{}
-	var out []string
-	for _, s := range in {
-		if !seen[s] {
-			seen[s] = true
-			out = append(out, s)
-		}
-	}
-	return out
 }
 
 func applyCmd() *cobra.Command {
