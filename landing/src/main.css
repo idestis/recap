@@ -35,7 +35,7 @@
     html { scroll-behavior: smooth; }
   }
   body {
-    @apply bg-peach text-navy font-sans antialiased dark:bg-night dark:text-snow;
+    @apply bg-white text-navy font-sans antialiased dark:bg-night-2 dark:text-snow;
     min-width: 320px;
   }
   :focus-visible {
@@ -48,10 +48,28 @@
 }
 
 @layer components {
-  .page {
-    @apply mx-auto my-2 max-w-[1200px] overflow-clip rounded-[1.5rem] bg-white shadow-soft sm:my-6 sm:rounded-page dark:bg-night-2;
+  /* Full-bleed page: sections span the window; .gutter keeps content at a
+     readable width (1200px) with breathing room on small screens. */
+  .page { @apply flex min-h-dvh flex-col overflow-x-clip; }
+  .gutter {
+    --gutter: 1rem;
+    padding-inline: max(var(--gutter), calc((100% - 1200px) / 2));
+    @variant sm { --gutter: 2rem; }
+    @variant lg { --gutter: 3rem; }
   }
-  .gutter { @apply px-4 sm:px-8 lg:px-12; }
+  /* Bands: full-width backgrounds that separate sections without boxes. */
+  .band-hero {
+    background:
+      radial-gradient(70rem 36rem at 50% -8%, #ffd9c2 0%, rgb(255 217 194 / 0) 70%),
+      linear-gradient(180deg, #fff3ea 0%, #ffffff 100%);
+  }
+  [data-theme="dark"] .band-hero {
+    background:
+      radial-gradient(70rem 36rem at 50% -8%, rgb(255 106 85 / 0.18) 0%, rgb(255 106 85 / 0) 70%),
+      linear-gradient(180deg, #161c28 0%, #121722 100%);
+  }
+  .band-soft { @apply bg-[#fffaf6] dark:bg-night; }
+  .band-tint { @apply bg-peach dark:bg-night-3; }
   .sub { @apply text-slate-ink dark:text-mist; }
   .grad-text {
     background-image: linear-gradient(100deg, #ef7a10, #e5402e);
@@ -85,9 +103,7 @@
   .card {
     @apply rounded-2xl border border-navy/10 bg-white p-5 shadow-soft dark:border-white/10 dark:bg-night-3;
   }
-  .panel-tint {
-    @apply rounded-[1.5rem] bg-peach p-5 sm:rounded-page sm:p-10 dark:bg-night-3;
-  }
+  .panel-tint { @apply contents; }
 
   /* Terminal window: dark in both themes, scrolls inside itself. */
   .term {
