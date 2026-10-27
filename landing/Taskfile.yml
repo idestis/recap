@@ -1,0 +1,15 @@
+version: '3'
+tasks:
+  dev:
+    desc: Serve the landing page on http://localhost:4321
+    cmds:
+      - python3 -m http.server 4321
+  check:
+    desc: Validate XML and enforce zero third-party requests
+    cmds:
+      - xmllint --noout sitemap.xml logo.svg favicon.svg
+      - |
+        if grep -nE 'src="http|href="http://|<link[^>]+rel="stylesheet"[^>]+href="(https?:)?//|<script[^>]+src="(https?:)?//|<iframe|<img[^>]+src="(https?:)?//|src="//|href="//' index.html 404.html; then echo "FAIL: third-party or insecure reference"; exit 1; fi
+      - |
+        if grep -nE 'url\(\s*["'"'"']?(https?:)?//|url\(http|@import' styles.css; then echo "FAIL: external reference in CSS"; exit 1; fi
+      - echo "check ok"

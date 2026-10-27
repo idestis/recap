@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>recap: fix it once, never figure it out again</title>
+<meta name="description" content="recap records what you and your AI agents do while fixing an incident, then turns the approved parts into risk-labeled Markdown recipes in your own Git repo. Local-first CLI and macOS menu bar app.">
+<link rel="canonical" href="https://idestis.github.io/recap/">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1319" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="recap: fix it once, never figure it out again">
+<meta property="og:description" content="Local-first incident recipes from your terminal and AI agents, kept in your own Git repo.">
+<meta property="og:url" content="https://idestis.github.io/recap/">
+<meta property="og:image" content="https://idestis.github.io/recap/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="recap: fix it once, never figure it out again">
+<meta name="twitter:description" content="Local-first incident recipes from your terminal and AI agents, kept in your own Git repo.">
+<meta name="twitter:image" content="https://idestis.github.io/recap/og.png">
+<script>try{var t=localStorage.getItem("recap-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"recap","description":"Local-first CLI and macOS menu bar app that turns incident work into reviewed, risk-labeled Markdown recipes in Git.","operatingSystem":"macOS","applicationCategory":"DeveloperApplication","license":"https://www.apache.org/licenses/LICENSE-2.0","url":"https://idestis.github.io/recap/","codeRepository":"https://github.com/idestis/recap"}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header>
+<div class="wrap bar">
+<a class="brand" href="#top"><img src="logo.svg" alt="" width="28" height="28">recap</a>
+<nav aria-label="Primary">
+<a class="n" href="#how">How it works</a><a class="n" href="#features">Features</a><a class="n" href="#privacy">Privacy</a><a href="https://github.com/idestis/recap">GitHub</a>
+<button class="tt" id="tt" type="button" aria-label="Toggle light and dark theme">&#9680;</button>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="hero" id="top"><div class="wrap">
+<h1>Fix it once. <em>Never figure it out again.</em></h1>
+<p class="lede">recap watches what you and your AI agents do while fixing an incident, then turns the parts you approve into clean recipes in your own Git repo.</p>
+<div class="cta">
+<a class="btn p" href="https://github.com/idestis/recap">View on GitHub</a>
+<a class="btn" href="https://github.com/idestis/recap/releases">Download for Mac<small>coming soon</small></a>
+</div>
+<p class="fine">macOS 14 or later &middot; open source &middot; early development</p>
+<div class="stage">
+<div class="term" role="img" aria-label="Terminal session: recap start, two kubectl commands, a context note, then recap stop drafting a recipe called Fix OOMKilled pods, risky-prod, 4 steps.">
+<div class="tb" aria-hidden="true"><i></i><i></i><i></i><span>zsh &mdash; prod-eu</span></div>
+<pre aria-hidden="true"><span class="ln"><span class="g">$</span> recap start "checkout API returning 502s"
+<span class="rec">&#9679;</span> <span class="d">Recording</span> 2026-10-27.1 <span class="d">checkout-api-returning-502s</span></span><span class="ln"><span class="g">$</span> kubectl -n checkout get pods
+<span class="d">checkout-api-7d9   0/1   OOMKilled</span></span><span class="ln"><span class="g">$</span> kubectl -n checkout set resources deploy/checkout-api \
+    --limits=memory=1Gi</span><span class="ln"><span class="g">$</span> recap ctx "do not roll back, migration 0142 ran"
+<span class="d">note added</span></span><span class="ln"><span class="g">$</span> recap stop
+<span class="d">Did this fix it? [Y/n]</span> y</span><span class="ln"><span class="g">&#10003;</span> Draft: "Fix OOMKilled pods" &middot; <span class="y">risky-prod</span> &middot; 4 steps</span><span class="ln"><span class="g">$</span> <span class="cur"></span></span></pre>
+</div>
+<article class="recipe" aria-label="Example recipe">
+<div class="file">recipes/fix-oomkilled-pods.md</div>
+<h3>Fix OOMKilled pods</h3>
+<span class="badge">risky &middot; prod</span>
+<h4>Preconditions</h4>
+<ul><li>kubectl context points at the right cluster</li><li>Deployment is not mid-rollout</li></ul>
+<h4>Steps</h4>
+<ol>
+<li>List pods and confirm the OOMKilled status<pre>kubectl -n {namespace} get pods</pre></li>
+<li>Raise the memory limit<pre>kubectl -n {namespace} set resources deploy/{deployment} --limits=memory=1Gi</pre></li>
+<li>Watch the rollout<pre>kubectl -n {namespace} rollout status deploy/{deployment}</pre></li>
+<li>Confirm pods are Ready<pre>kubectl -n {namespace} get pods</pre></li>
+</ol>
+<p class="undo">Undo: kubectl -n {namespace} rollout undo deploy/{deployment}</p>
+</article>
+</div>
+</div></div>
+
+<section id="how" class="alt"><div class="wrap">
+<h2>How it works</h2>
+<p class="sub">Five steps from raw terminal noise to a recipe your team can trust.</p>
+<ol class="pipe">
+<li><b>Capture</b><span>Commands from attached tabs, Claude Code tool calls, notes, links and files.</span></li>
+<li><b>Redact</b><span>Secrets are masked on your Mac before any model call or Git write.</span></li>
+<li><b>Label risk</b><span>Rules mark each step safe, risky or destructive, and flag prod.</span></li>
+<li><b>Draft</b><span>Templates, or your own model. Models reword; commands never change.</span></li>
+<li><b>Review &amp; publish</b><span>Pick what to keep, dedup into variants, then open a PR or push.</span></li>
+</ol>
+</div></section>
+
+<section id="features"><div class="wrap">
+<h2>Built for the next 3 a.m.</h2>
+<p class="sub">Small, local, and honest about risk.</p>
+<div class="grid">
+<div class="card"><h3>Recipes in your Git repo</h3><p>Plain, deterministic Markdown with preconditions, numbered steps and an undo line. Reviewable diffs, no lock-in.</p></div>
+<div class="card"><h3>Spaces for every team</h3><p>One install, many recipe repos, picked by the folder you work in. Each publishes by pull request, push, or not at all.</p></div>
+<div class="card"><h3>Bring your own model</h3><p>Use templates, Ollama locally, or any OpenAI-compatible API. API keys stay in the macOS Keychain.</p></div>
+<div class="card"><h3>Quick context overlay</h3><p>Press <kbd>&#8997;&#8679;Space</kbd> anywhere for a glass input bar. Type or dictate with macOS Dictation or Wispr Flow, and attach a screenshot or tab link.</p></div>
+<div class="card"><h3>Risk you can trust</h3><p>Risk comes from rules. A model may raise it, never lower it. Risky steps ask before they run.</p></div>
+<div class="card"><h3>Works with Claude Code</h3><p>Hooks record its commands and can block destructive prod commands when a verified recipe exists.</p></div>
+</div>
+</div></section>
+
+<section class="alt"><div class="wrap run">
+<div>
+<h2>Run it next time</h2>
+<p class="sub">Run the recipe by name. recap asks for the variables, shows a preflight with every step labeled, and only then goes ahead.</p>
+</div>
+<div class="term" role="img" aria-label="Terminal: recap run pods out of memory asks for namespace and deployment, then lists a preflight with safe and risky steps.">
+<div class="tb" aria-hidden="true"><i></i><i></i><i></i><span>zsh</span></div>
+<pre aria-hidden="true"><span class="g">$</span> recap run "pods out of memory"
+<span class="d">Recipe:</span> Fix OOMKilled pods
+namespace? <span class="c">checkout</span>
+deployment? <span class="c">checkout-api</span>
+
+<span class="d">Preflight</span>
+ 1 <span class="g">safe  </span> kubectl -n checkout get pods
+ 2 <span class="y">risky </span> kubectl -n checkout set resources ...
+ 3 <span class="g">safe  </span> kubectl -n checkout rollout status ...
+ 4 <span class="g">safe  </span> kubectl -n checkout get pods
+<span class="y">prod</span> cluster. Run 4 steps? [y/N]</pre>
+</div>
+</div></section>
+
+<section id="privacy"><div class="wrap">
+<h2>What recap does and doesn't do</h2>
+<p class="sub">No recap cloud. Raw timelines stay on your Mac; only reviewed recipes go to Git.</p>
+<div class="cols">
+<div class="card do"><h3>Does</h3><ul>
+<li>Mask secrets locally before any model call or Git write</li>
+<li>Keep raw timelines on your Mac</li>
+<li>Store API keys in the macOS Keychain</li>
+<li>Ask before risky steps</li>
+<li>Publish only recipes you reviewed</li>
+</ul></div>
+<div class="card dont"><h3>Doesn't</h3><ul>
+<li>Send telemetry or run a hosted service</li>
+<li>Record audio, ever</li>
+<li>Delete anything on its own</li>
+<li>Let a model change a command or lower a risk label</li>
+<li>Put timelines, screenshots or transcripts in Git</li>
+</ul></div>
+</div>
+</div></section>
+
+<section id="start" class="alt start"><div class="wrap">
+<h2>Get started</h2>
+<p class="sub">Early development, build from source. A signed Mac download is not published yet.</p>
+<div class="cols">
+<div class="term"><div class="tb" aria-hidden="true"><i></i><i></i><i></i><span>install</span></div><pre>git clone https://github.com/idestis/recap
+cd recap &amp;&amp; task pkg</pre></div>
+<div class="term"><div class="tb" aria-hidden="true"><i></i><i></i><i></i><span>first commands</span></div><pre>recap init
+recap shell-init --install
+recap start "&hellip;"</pre></div>
+</div>
+</div></section>
+</main>
+<footer><div class="wrap">
+<span>Apache-2.0 &middot; &copy; 2026 recap contributors</span>
+<span><a href="https://github.com/idestis/recap">Source on GitHub</a><a href="https://github.com/idestis/recap/releases">Releases</a></span>
+</div></footer>
+<script>
+document.getElementById("tt").addEventListener("click",function(){var r=document.documentElement,d=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches,n=d?"light":"dark";r.dataset.theme=n;try{localStorage.setItem("recap-theme",n)}catch(e){}});
+</script>
+</body>
+</html>

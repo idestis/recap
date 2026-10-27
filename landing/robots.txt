@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://idestis.github.io/recap/sitemap.xml
